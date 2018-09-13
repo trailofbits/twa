@@ -44,7 +44,7 @@ If you need to audit multiple domains, run it multiple times.
 Each result line comprises a test result, and looks like this:
 
 ```
-TYPE($domain): explanation
+TYPE(domain): explanation
 ```
 
 where `TYPE` is one of `PASS`, `MEH`, `FAIL`, `UNK`, `SKIP`, and `FATAL`:
