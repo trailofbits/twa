@@ -72,7 +72,7 @@ $ read -r score npasses nmehs nfailures nunknowns nskips totally_screwed < <(twa
 $ echo "score: ${score}"
 ```
 
-Like `twa`, `tscore` is opinionated. You can change its opinions (i.e., it's score weights)
+Like `twa`, `tscore` is opinionated. You can change its opinions (i.e., its score weights)
 by editing it.
 
 ## Contributing
