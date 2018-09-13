@@ -1,0 +1,409 @@
+#!/usr/bin/env bash
+
+# twa: a tiny website auditing script
+
+function installed {
+  cmd=$(command -v "${1}")
+
+  [[ -n "${cmd}" ]] && [[ -f "${cmd}" ]]
+  return ${?}
+}
+
+function die {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+function warn {
+  echo "Warn: $*" >&2
+}
+
+function verbose {
+  [[ -n "${verbose}" ]] && echo "[+] $*" >&2
+}
+
+function ensure {
+  "$@" \
+    || die "Failed to run '$*'. Aborting."
+}
+
+function curl_headers {
+  verbose "Fetching headers for ${1}"
+  curl -s -I "${1}"
+}
+
+function curl_respcode {
+  curl -o /dev/null -s -I -L -w "%{http_code}" "${1}"
+}
+
+function get_header {
+  header="${1}"
+
+  verbose "Extracting ${header}"
+
+  awk "BEGIN { IGNORECASE = 1 }
+       /^${header}:/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
+}
+
+function get_field {
+  field="${1}"
+
+  verbose "Extracting ${field}"
+
+  awk -F";" "BEGIN { IGNORECASE = 1 }
+             /^${field}/ { print \$1 }" | tr -d '\r\n'
+}
+
+# PASS: A test passed with flying colors (nothing wrong at all).
+function PASS {
+  echo "PASS(${domain}): $*"
+}
+
+# MEH: A test passed, but with one or more things that could be improved.
+function MEH {
+  echo "MEH(${domain}): $*"
+}
+
+# FAIL: A test failed, and should be fixed.
+function FAIL {
+  echo "FAIL(${domain}): $*"
+}
+
+# FATAL: A really important test failed, and should be fixed immediately.
+function FATAL {
+  echo "FATAL(${domain}): $*"
+}
+
+# UNK: The server gave us something we didn't understand.
+function UNK {
+  echo "UNK(${domain}): $*"
+}
+
+# SKIP: This test hasn't been implemented yet.
+function SKIP {
+  echo "SKIP(${domain}): $*"
+}
+
+
+# Stage 0: The server should support HTTPS.
+#
+# Checks:
+# * Connecting via port 443 should yield a valid certificate and HTTP connection.
+#
+# This test is a little special, in that it sets "no_https" if it fails. Stage 2
+# checks "no_https" and doesn't run if it's set, as security headers are pointless over HTTP.
+# As such, failure in this stage is marked as "FATAL".
+function stage_0_has_https {
+  verbose "Stage 0: Server supports HTTPS"
+
+  # First, just probe the domain to see if it listens on 443.
+  if ! nc -z -w2 "${domain}" 443 ; then
+    FATAL "expected port 443 to be open, but it isn't"
+    no_https=1 ; return
+  fi
+
+  # The rest below would be cool, but is probably unnecessary since `curl`
+  # won't connect to an insecure HTTPS server by default.
+  # # Then, use `openssl` to retrieve the certificate and test its validity.
+  # cert=$(openssl s_client -connect "${domain}:443" < /dev/null)
+
+  # expiry=$(openssl x509 -noout -dates <<< "${cert}")
+
+  # not_before=$(grep -o "^notBefore=.+" <<< "${expiry}" | cut -d = -f2-)
+  # not_after=$(grep -o "^notAfter=.+" <<< "${expiry}" | cut -d = -f2-)
+
+  # if [[ -z "${not_before}" || -z "${not_after}" ]]; then
+  #   # I don't think this will ever happen, but it doesn't hurt to check.
+  #   FAIL "server sent a certificate, but it's missing either a notBefore or a notAfter?"
+  # else
+  #   not_before=$(date -d "${not_before}" +%s)
+  #   not_after=$(date -d "${not_after}" +%s)
+  #   now=$(date +%s)
+
+  #   if [[ "${now}" -lt "${not_before}" ]]; then
+  #     FAIL ""
+  #   fi
+  # fi
+}
+
+
+# Stage 1: HTTP should be redirected to HTTPS; no exceptions.
+#
+# Checks:
+# * Connecting via port 80 should return HTTP 301 with a HTTPS location.
+function stage_1_redirection {
+  verbose "Stage 1: HTTP -> HTTPS redirection"
+  headers=$(curl_headers "http://${domain}")
+
+  read -r -d "\n" response location < <(
+      awk '/^HTTP/ { print $2 }
+           /^Location:/ { print $2 }' <<< "${headers}"
+    )
+
+  if [[ "${location}" =~ ^https ]]; then
+    if [[ "${response}" == 301 ]]; then
+      PASS "HTTP redirects to HTTPS using a 301"
+    elif [[ "${response}" == 302 ]]; then
+      MEH "HTTP redirects to HTTPS using a 302"
+    else
+      UNK "HTTP sends an HTTPS location but with a weird response code: ${response}"
+    fi
+  elif [[ "${location}" =~ ^http ]]; then
+    FAIL "HTTP redirects to HTTP (not secure)"
+  else
+    FAIL "HTTP doesn't redirect at all"
+  fi
+}
+
+
+# Stage 2: The server should specify a decent set of security headers.
+#
+# Checks:
+# * Strict-Transport-Security should specify a max-age
+# * X-Frame-Options should be "deny"
+# * X-Content-Type-Options should be "nosniff"
+# * X-XSS-Protection should be "1; mode=block"
+# * Referrer-Policy should be "no-referrer"
+# * Content-Security-Policy should be whatever awful policy string is the most secure.
+#
+# TODO: Add Feature-Policy?
+function stage_2_security_headers {
+  verbose "Stage 2: Sane security headers"
+
+  if [[ -n "${no_https}" ]]; then
+    FATAL "skipping security header checks due to no secure channel"
+    return
+  fi
+
+  headers=$(curl_headers "https://${domain}")
+
+  sts=$(get_header "Strict-Transport-Security" <<< "${headers}")
+  sts_max_age=$(get_field "max-age" <<< "${sts}" | awk -F= '{ print $2 }')
+  sts_incl_subs=$(get_field "includeSubDomains" <<< "${sts}")
+  sts_preload=$(get_field "preload" <<< "${sts}")
+
+  if [[ -n "${sts}" ]]; then
+    if [[ -n "${sts_max_age}" ]]; then
+      if [[ "${sts_max_age}" -ge 15768000 ]]; then
+        PASS "max-age is at least 6 months"
+      else
+        MEH "max-age is less than 6 months"
+      fi
+    else
+      UNK "Strict-Transport-Security received, but no max-age"
+    fi
+
+    if [[ -n "${sts_incl_subs}" ]]; then
+      PASS "Strict-Transport-Security specifies includeSubDomains"
+    else
+      MEH "Strict-Transport-Security, but no includeSubDomains"
+    fi
+
+    if [[ -n "${sts_preload}" ]]; then
+      PASS "Strict-Transport-Security specifies preload"
+    else
+      MEH "Strict-Transport-Security, but no preload"
+    fi
+  else
+    FAIL "Strict-Transport-Security missing"
+  fi
+
+  xfo=$(get_header "X-Frame-Options" <<< "${headers}")
+  xfo=${xfo,,}
+
+  if [[ -n "${xfo}" ]]; then
+    if [[ "${xfo}" == "deny" ]]; then
+      PASS "X-Frame-Options is 'deny'"
+    elif [[ "${xfo}" == "sameorigin" ]]; then
+      MEH "X-Frame-Options is 'sameorigin', consider 'deny'?"
+    elif [[ "${xfo}" =~ ^allow-from ]]; then
+      MEH "X-Frame-Options is 'allow-from', consider 'deny' or 'none'?"
+    else
+      UNK "X-Frame-Options set to something weird: ${xfo}"
+    fi
+  else
+    FAIL "X-Frame-Options missing"
+  fi
+
+  xcto=$(get_header "X-Content-Type-Options" <<< "${headers}")
+
+  if [[ -n "${xcto}" ]]; then
+    if [[ "${xcto,,}" == "nosniff" ]]; then
+      PASS "X-Content-Type-Options is 'nosniff'"
+    else
+      UNK "X-Content-Type-Options set to something weird: ${xcto}"
+    fi
+  else
+    FAIL "X-Content-Type-Options missing"
+  fi
+
+  xxp=$(get_header "X-XSS-Protection" <<< "${headers}")
+  xxp=${xxp,,}
+
+  if [[ -n "${xxp}" ]]; then
+    if [[ "${xxp}" == 0 ]]; then
+      FAIL "X-XSS-Protection is '0'; XSS filtering disabled"
+    elif [[ "${xxp}" =~ ^1 ]]; then
+      if [[ "${xxp}" =~ mode=block ]]; then
+        PASS "X-XSS-Protection specifies mode=block"
+      else
+        MEH "X-XSS-Protection sanitizes but doesn't block, consider mode=block?"
+      fi
+    fi
+  else
+    FAIL "X-XSS-Protection missing"
+  fi
+
+  rp=$(get_header "Referrer-Policy" <<< "${headers}")
+  rp=${rp,,}
+
+  if [[ -n "${rp}" ]]; then
+    if [[ "${rp}" == "no-referrer" ]]; then
+      PASS "Referrer-Policy specifies 'no-referrer'"
+    elif [[ "${rp}" == "unsafe-url"
+            || "${rp}" == "no-referrer-when-downgrade"
+            || "${rp}" == "origin"
+            || "${rp}" == "origin-when-cross-origin"
+            || "${rp}" == "same-origin"
+            || "${rp}" == "strict-origin" ]]; then
+      MEH "Referrer-Policy specifies '${rp}', consider 'no-referrer'?"
+    fi
+  else
+    FAIL "Referrer-Policy missing"
+  fi
+
+  csp=$(get_header "Content-Security-Policy" <<< "${headers}")
+  csp_default_src=$(get_field "default-src" <<< "${csp}" | cut -d " " -f2-)
+
+  if [[ -n "${csp}" ]]; then
+    if [[ -n "${csp_default_src}" ]]; then
+      if [[ "${csp_default_src//\'}" == "none" ]]; then
+        PASS "Content-Security-Policy 'default-src' is 'none'"
+      else
+        MEH "Content-Security-Policy 'default-src' is ${csp_default_src}"
+      fi
+    else
+      FAIL "Content-Security-Policy 'default-src' is missing"
+    fi
+
+    if [[ "${csp}" =~ unsafe-inline ]]; then
+      FAIL "Content-Security-Policy has one or more 'unsafe-inline' policies"
+    fi
+
+    if [[ "${csp}" =~ unsafe-eval ]]; then
+      FAIL "Content-Security-Policy has one or more 'unsafe-eval' policies"
+    fi
+  else
+    FAIL "Content-Security-Policy missing"
+  fi
+
+  fp=$(get_header "Feature-Policy" <<< "${headers}")
+
+  if [[ -n "${fp}" ]]; then
+    SKIP "Feature-Policy checks not implemented yet"
+  else
+    FAIL "Feature-Policy missing"
+  fi
+}
+
+
+#
+# Stage 3: The server should disclose a minimum amount of information about itself.
+#
+# Checks:
+#  * The "Server:" header shouldn't contain a version number or OS distribution code.
+#  * The server shouldn't be sending common nonstandard identifying headers (X-Powered-By)
+function stage_3_information_disclosure {
+  verbose "Stage 3: Information disclosure"
+  server=$(get_header "Server" <<< "${headers}")
+
+  if [[ -n "${server}" ]]; then
+    server_wc=$(wc -w <<< "${server}")
+    if [[ "${server_wc}" -le 1 ]]; then
+      PASS "Site sends 'Server', but probably only a vendor ID: ${server}"
+    else
+      FAIL "Site sends a long 'Server', probably disclosing version info: ${server}"
+    fi
+  else
+    PASS "Site doesn't send 'Server' header"
+  fi
+
+  for badheader in X-Powered-By Via X-AspNet-Version X-AspNetMvc-Version; do
+    content=$(get_header "${badheader}" <<< "${headers}")
+
+    if [[ -n "${content}" ]]; then
+      FAIL "Site sends '${badheader}', probably disclosing version info: ${content}"
+    else
+      PASS "Site doesn't send '${badheader}'"
+    fi
+  done
+}
+
+
+# Stage 4: The server shouldn't be serving its source repository (git/svn/hg/etc).
+#
+# Checks:
+# * GET /.git/HEAD should 404.
+# * GET /.hg/store/00manifest.i should 404.
+# * GET /.svn/entries should 404.
+function stage_4_scm_repos {
+  verbose "Stage 4: SCM repositories"
+
+  for repo_file in .git/HEAD .hg/store/00manifest.i .svn/entries; do
+    url="http://${domain}/${repo_file}"
+    code=$(curl_respcode "${url}")
+
+    if [[ "${code}" -eq 200 ]]; then
+      FAIL "SCM repository being served at: ${url}"
+    elif [[ "${code}" -eq 403 ]]; then
+      MEH "Possible SCM repository being served (maybe protected?) at: ${url}"
+    elif [[ "${code}" -eq 404 ]]; then
+      PASS "No SCM repository at: ${url}"
+    else
+      UNK "Got a weird response code (${code}) when testing for SCM at: ${url}"
+    fi
+  done
+}
+
+
+# Some ideas for a fifth stage:
+# * `dig +short caa $domain`
+#   * Good: They specify an issuer.
+#   * Meh: They specify an known bad issuer, or they specifically disallow all issuers.
+#   * Fail: They don't have a CAA record or don't specify an issuer at all.
+# * Fetch the server's cert using `openssl s_client`, check it for known bad suites
+#   * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
+
+
+ensure installed curl
+ensure installed nc
+
+while getopts ":wv" opt; do
+  case "${opt}" in
+    w ) www=1 ;;
+    v ) verbose=1 ;;
+    \? ) echo "Usage: twa [-vw] <domain>"; exit ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+domain="${1}"
+
+[[ -n "${domain}" ]] || { echo "Usage: twa [-w] <domain>"; exit 1;  }
+[[ "${domain}" =~ ^https? ]] && die "Expected a bare domain, e.g. 'example.com'"
+
+if [[ -n "${www}" ]]; then
+  if [[ "${domain}" =~ ^www ]]; then
+    warn "Expected non-www domain with -w, not going any deeper than ${domain}"
+  else
+    $0 "www.${domain}"
+  fi
+fi
+
+stage_0_has_https
+stage_1_redirection
+stage_2_security_headers
+stage_3_information_disclosure
+stage_4_scm_repos
+

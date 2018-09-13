@@ -1,0 +1,51 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+    score = 100
+    npasses = 0
+    nmehs = 0
+    nfailures = 0
+    nunknowns = 0
+    nskips = 0
+    totally_screwed = 0
+}
+
+/^PASS/ {
+    npasses += 1
+}
+
+/^MEH/ {
+    score -= 5
+    nmehs += 1
+}
+
+/^FAIL/ {
+    score -= 10
+    nfailures += 1
+}
+
+/^UNK/ {
+    # Punish the server just a little for an unknown result.
+    score -= 1
+    nunknowns += 1
+}
+
+/^SKIP/ {
+    nskips += 1
+}
+
+/^FATAL/ {
+    score = 0
+    totally_screwed = 1
+}
+
+END {
+    # Cap the minimum score at 0. I don't have a strong opinion about this,
+    # but it does remove the need to handle a negative case.
+    if (score < 0) {
+        printf "score %d < 0, capping it at 0\n", score > "/dev/stderr"
+        score = 0
+    }
+
+    printf "%d %d %d %d %d %d %d\n", score, npasses, nmehs, nfailures, nunknowns, nskips, totally_screwed
+}
