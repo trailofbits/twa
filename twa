@@ -2,13 +2,16 @@
 
 # twa: a tiny website auditing script
 
-
-# Colored output
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-PURPLE='\033[0;35m'
-NC='\033[0m'
+# TTY check to prevent breaking scripts
+# Respect the "NO_COLOR spec"
+if [[ -t 1 && -z "${NO_COLOR}" ]]; then
+  # Colored output
+  COLOR_GREEN='\033[0;32m'
+  COLOR_BLUE='\033[0;34m'
+  COLOR_RED='\033[0;31m'
+  COLOR_PURPLE='\033[0;35m'
+  COLOR_RESET='\033[0m'
+fi
 
 function installed {
   cmd=$(command -v "${1}")
@@ -64,32 +67,32 @@ function get_field {
 
 # PASS: A test passed with flying colors (nothing wrong at all).
 function PASS {
-  echo -e "${GREEN}PASS${NC}(${domain}): $*"
+  echo -e "${COLOR_GREEN}PASS${COLOR_RESET}(${domain}): $*"
 }
 
 # MEH: A test passed, but with one or more things that could be improved.
 function MEH {
-  echo -e "${BLUE}MEH${NC}(${domain}): $*"
+  echo -e "${COLOR_BLUE}MEH${COLOR_RESET}(${domain}): $*"
 }
 
 # FAIL: A test failed, and should be fixed.
 function FAIL {
-  echo -e "${RED}FAIL${NC}(${domain}): $*"
+  echo -e "${COLOR_RED}FAIL${COLOR_RESET}(${domain}): $*"
 }
 
 # FATAL: A really important test failed, and should be fixed immediately.
 function FATAL {
-  echo -e "${RED}FATAL${NC}(${domain}): $*"
+  echo -e "${COLOR_RED}FATAL${COLOR_RESET}(${domain}): $*"
 }
 
 # UNK: The server gave us something we didn't understand.
 function UNK {
-  echo -e "${PURPLE}UNK${NC}(${domain}): $*"
+  echo -e "${COLOR_PURPLE}UNK${COLOR_RESET}(${domain}): $*"
 }
 
 # SKIP: This test hasn't been implemented yet.
 function SKIP {
-  echo -e "${PURPLE}SKIP${NC}(${domain}): $*"
+  echo -e "${COLOR_PURPLE}SKIP${COLOR_RESET}(${domain}): $*"
 }
 
 
