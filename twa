@@ -378,6 +378,8 @@ function stage_4_scm_repos {
 ensure installed curl
 ensure installed nc
 
+[[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
+
 while getopts ":wv" opt; do
   case "${opt}" in
     w ) www=1 ;;
