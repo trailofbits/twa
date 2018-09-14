@@ -1,0 +1,55 @@
+.TH TWA 1 2018-09-14 "" "User Commands"
+
+.SH NAME
+twa \- tiny web auditor with strong opinions
+
+.SH SYNOPSIS
+\fBtwa\fR \fI[-vw]\fR \fIDOMAIN\fR
+
+.SH DESCRIPTION
+.B twa
+takes a
+.I DOMAIN
+hosting a website and performs a short security audit.
+It can be used to detect HTTP(S) issues, missing security headers,
+information-leaking headers, and other potential security hazards.
+
+.B twa
+takes only one
+.I DOMAIN
+at a time. If you need to audit multiple sites, run the program again.
+
+.SH OPTIONS
+.TP
+.B \-v
+Verbose mode.
+.TP
+.B \-w
+Perform the audit on the main
+.I DOMAIN
+and the
+.I www.
+subdomain.
+
+.SH TEST RESULTS
+Each line of output describes the result of a single test, 
+and follows the "\fBRESULT\fR(\fIDOMAIN\fR): explanation" format,
+where \fBRESULT\fR is one of the following:
+.TP
+.B PASS
+The test passed with flying colors.
+.TP
+.B MEH
+The test passed, but with one or more things that could be improved.
+.TP
+.B FAIL
+The test failed, and should be fixed.
+.TP
+.B UNK
+The server gave us something we didn't understand.
+.TP
+.B SKIP
+The server gave us something we understood, but that we don't handle yet.
+.TP
+.B FATAL
+A really important test failed, and should be fixed immediately.
