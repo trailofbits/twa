@@ -6,11 +6,11 @@
 # Respect the "NO_COLOR spec"
 if [[ -t 1 && -z "${NO_COLOR}" ]]; then
   # Colored output
-  COLOR_GREEN='\033[0;32m'
-  COLOR_BLUE='\033[0;34m'
-  COLOR_RED='\033[0;31m'
-  COLOR_PURPLE='\033[0;35m'
-  COLOR_RESET='\033[0m'
+  TWA_COLOR_GREEN=$(tput setaf 2)
+  TWA_COLOR_BLUE=$(tput setaf 4)
+  TWA_COLOR_RED=$(tput setaf 1)
+  TWA_COLOR_PURPLE=$(tput setaf 5)
+  TWA_COLOR_RESET=$(tput sgr0)
 fi
 
 function installed {
@@ -67,32 +67,32 @@ function get_field {
 
 # PASS: A test passed with flying colors (nothing wrong at all).
 function PASS {
-  echo -e "${COLOR_GREEN}PASS${COLOR_RESET}(${domain}): $*"
+  echo -e "${TWA_COLOR_GREEN}PASS${TWA_COLOR_RESET}(${domain}): $*"
 }
 
 # MEH: A test passed, but with one or more things that could be improved.
 function MEH {
-  echo -e "${COLOR_BLUE}MEH${COLOR_RESET}(${domain}): $*"
+  echo -e "${TWA_COLOR_BLUE}MEH${TWA_COLOR_RESET}(${domain}): $*"
 }
 
 # FAIL: A test failed, and should be fixed.
 function FAIL {
-  echo -e "${COLOR_RED}FAIL${COLOR_RESET}(${domain}): $*"
+  echo -e "${TWA_COLOR_RED}FAIL${TWA_COLOR_RESET}(${domain}): $*"
 }
 
 # FATAL: A really important test failed, and should be fixed immediately.
 function FATAL {
-  echo -e "${COLOR_RED}FATAL${COLOR_RESET}(${domain}): $*"
+  echo -e "${TWA_COLOR_RED}FATAL${TWA_COLOR_RESET}(${domain}): $*"
 }
 
 # UNK: The server gave us something we didn't understand.
 function UNK {
-  echo -e "${COLOR_PURPLE}UNK${COLOR_RESET}(${domain}): $*"
+  echo -e "${TWA_COLOR_PURPLE}UNK${TWA_COLOR_RESET}(${domain}): $*"
 }
 
 # SKIP: This test hasn't been implemented yet.
 function SKIP {
-  echo -e "${COLOR_PURPLE}SKIP${COLOR_RESET}(${domain}): $*"
+  echo -e "${TWA_COLOR_PURPLE}SKIP${TWA_COLOR_RESET}(${domain}): $*"
 }
 
 
@@ -384,7 +384,6 @@ function stage_4_scm_repos {
 #   * Fail: They don't have a CAA record or don't specify an issuer at all.
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
 #   * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
-
 
 ensure installed curl
 ensure installed nc
