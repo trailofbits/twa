@@ -1,0 +1,32 @@
+name: twa
+version: 'master'
+summary: A tiny web auditor with strong opinions.
+description: |
+  twa takes one domain at a time, and only audits 
+  more than one domain at once in the -w case. 
+  If you need to audit multiple domains, 
+  run it multiple times.
+
+grade: stable
+confinement: strict
+
+apps:
+  twa:
+    command: twa
+    plugs:
+      - network
+  tscore: 
+    command: tscore
+
+parts:
+  twa:
+    source: https://github.com/woodruffw/twa.git
+    plugin: dump
+    stage-packages:
+      - bash
+      - awk
+      - curl
+      - netcat-openbsd
+    organize: 
+      bin/nc.openbsd: bin/nc
+    
