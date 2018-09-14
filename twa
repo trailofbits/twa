@@ -2,6 +2,14 @@
 
 # twa: a tiny website auditing script
 
+
+# Colored output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
+
 function installed {
   cmd=$(command -v "${1}")
 
@@ -56,32 +64,32 @@ function get_field {
 
 # PASS: A test passed with flying colors (nothing wrong at all).
 function PASS {
-  echo "PASS(${domain}): $*"
+  echo -e "${GREEN}PASS${NC}(${domain}): $*"
 }
 
 # MEH: A test passed, but with one or more things that could be improved.
 function MEH {
-  echo "MEH(${domain}): $*"
+  echo -e "${BLUE}MEH${NC}(${domain}): $*"
 }
 
 # FAIL: A test failed, and should be fixed.
 function FAIL {
-  echo "FAIL(${domain}): $*"
+  echo -e "${RED}FAIL${NC}(${domain}): $*"
 }
 
 # FATAL: A really important test failed, and should be fixed immediately.
 function FATAL {
-  echo "FATAL(${domain}): $*"
+  echo -e "${RED}FATAL${NC}(${domain}): $*"
 }
 
 # UNK: The server gave us something we didn't understand.
 function UNK {
-  echo "UNK(${domain}): $*"
+  echo -e "${PURPLE}UNK${NC}(${domain}): $*"
 }
 
 # SKIP: This test hasn't been implemented yet.
 function SKIP {
-  echo "SKIP(${domain}): $*"
+  echo -e "${PURPLE}SKIP${NC}(${domain}): $*"
 }
 
 
