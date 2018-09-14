@@ -50,8 +50,8 @@ function get_field {
 
   verbose "Extracting ${field}"
 
-  awk -F";" "BEGIN { IGNORECASE = 1 }
-             /^${field}/ { print \$1 }" | tr -d '\r\n'
+  awk "BEGIN { RS = \";\"; IGNORECASE = 1 }
+             \$1 ~ /^${field}/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
 }
 
 # PASS: A test passed with flying colors (nothing wrong at all).
