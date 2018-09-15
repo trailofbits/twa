@@ -4,6 +4,8 @@
 
 TWA_VERSION="1.1.0"
 
+TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
+
 # TTY check to prevent breaking scripts
 # Respect the "NO_COLOR spec"
 if [[ -t 1 && -z "${NO_COLOR}" ]]; then
@@ -40,13 +42,17 @@ function ensure {
     || die "Failed to run '$*'. Aborting."
 }
 
-function curl_headers {
-  verbose "Fetching headers for ${1}"
-  curl -s -I "${1}"
+function fetch {
+  curl --max-time "${TWA_TIMEOUT}" "${@}"
 }
 
-function curl_respcode {
-  curl -o /dev/null -s -I -L -w "%{http_code}" "${1}"
+function fetch_headers {
+  verbose "Fetching headers for ${1}"
+  fetch -s -I "${1}"
+}
+
+function fetch_respcode {
+  fetch -o /dev/null -s -I -L -w "%{http_code}" "${1}"
 }
 
 function get_header {
@@ -146,11 +152,12 @@ function stage_0_has_https {
 # * Connecting via port 80 should return HTTP 301 with a HTTPS location.
 function stage_1_redirection {
   verbose "Stage 1: HTTP -> HTTPS redirection"
-  headers=$(curl_headers "http://${domain}")
+  headers=$(fetch_headers "http://${domain}")
 
-  read -r -d $'\n' response location < <(
-      awk '/^HTTP/ { print $2 }
-           /^Location:/ { print $2 }' <<< "${headers}"
+  read -r response location < <(
+      awk '/^HTTP/ { response = $2 }
+           /^Location:/ { location = $2 }
+           END { print response, location }' <<< "${headers}"
     )
 
   if [[ "${location}" =~ ^https ]]; then
@@ -188,7 +195,7 @@ function stage_2_security_headers {
     return
   fi
 
-  headers=$(curl_headers "https://${domain}")
+  headers=$(fetch_headers "https://${domain}")
 
   sts=$(get_header "Strict-Transport-Security" <<< "${headers}")
   sts_max_age=$(get_field "max-age" <<< "${sts}" | awk -F= '{ print $2 }')
@@ -368,7 +375,7 @@ function stage_4_scm_repos {
 
   for repo_file in .git/HEAD .hg/store/00manifest.i .svn/entries; do
     url="http://${domain}/${repo_file}"
-    code=$(curl_respcode "${url}")
+    code=$(fetch_respcode "${url}")
 
     if [[ "${code}" -eq 200 ]]; then
       FAIL "SCM repository being served at: ${url}"
@@ -410,7 +417,7 @@ shift $((OPTIND - 1))
 domain="${1}"
 
 [[ -n "${domain}" ]] || { echo "Usage: twa [-w] <domain>"; exit 1;  }
-[[ "${domain}" =~ ^https? ]] && die "Expected a bare domain, e.g. 'example.com'"
+[[ "${domain}" =~ ^https?:// ]] && die "Expected a bare domain, e.g. 'example.com'"
 
 if [[ -n "${www}" ]]; then
   if [[ "${domain}" =~ ^www ]]; then
