@@ -77,4 +77,4 @@ by editing it.
 
 ## Contributing
 
-New checks and refinements to existing ones are welcome and appreciated.
+Check out the [contributing guidelines](CONTRIBUTING.md).
