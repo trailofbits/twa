@@ -2,6 +2,8 @@
 
 # twa: a tiny website auditing script
 
+TWA_VERSION="1.0.0"
+
 # TTY check to prevent breaking scripts
 # Respect the "NO_COLOR spec"
 if [[ -t 1 && -z "${NO_COLOR}" ]]; then
@@ -390,10 +392,11 @@ ensure installed nc
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
-while getopts ":wv" opt; do
+while getopts ":wvV" opt; do
   case "${opt}" in
     w ) www=1 ;;
     v ) verbose=1 ;;
+    V ) echo "twa version ${TWA_VERSION}" ; exit ;;
     \? ) echo "Usage: twa [-vw] <domain>"; exit ;;
   esac
 done
