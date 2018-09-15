@@ -148,7 +148,7 @@ function stage_1_redirection {
   verbose "Stage 1: HTTP -> HTTPS redirection"
   headers=$(curl_headers "http://${domain}")
 
-  read -r -d "\n" response location < <(
+  read -r -d $'\n' response location < <(
       awk '/^HTTP/ { print $2 }
            /^Location:/ { print $2 }' <<< "${headers}"
     )
@@ -333,7 +333,11 @@ function stage_3_information_disclosure {
   if [[ -n "${server}" ]]; then
     server_wc=$(wc -w <<< "${server}")
     if [[ "${server_wc}" -le 1 ]]; then
-      PASS "Site sends 'Server', but probably only a vendor ID: ${server}"
+      if [[ "${server_wc}" == */* ]]; then
+        FAIL "Site sends 'Server' with what looks like a version tag: ${server}"
+      else
+        PASS "Site sends 'Server', but probably only a vendor ID: ${server}"
+      fi
     else
       FAIL "Site sends a long 'Server', probably disclosing version info: ${server}"
     fi
@@ -412,7 +416,7 @@ if [[ -n "${www}" ]]; then
   if [[ "${domain}" =~ ^www ]]; then
     warn "Expected non-www domain with -w, not going any deeper than ${domain}"
   else
-    $0 "www.${domain}"
+    "${0}" "www.${domain}"
   fi
 fi
 
