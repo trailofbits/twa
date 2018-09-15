@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+# test: run basic formatting and regression tests against twa/tscore
+
+set -e
+
+function installed {
+  cmd=$(command -v "${1}")
+
+  [[ -n "${cmd}" ]] && [[ -f "${cmd}" ]]
+  return ${?}
+}
+
+function die {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+function ensure {
+  "$@" \
+    || die "Failed to run '$*'. Aborting."
+}
+
+TWA="${TWA:-./twa}"
+TSCORE="${TSCORE:-./tscore}"
+TEST_DOMAIN="${TEST_DOMAIN:-example.com}"
+
+
+[[ -x "${TWA}" ]] || die "${TWA} is not an executable file"
+[[ -x "${TSCORE}" ]] || die "${TSCORE} is not an executable file"
+
+ensure installed shellcheck
+
+shellcheck "${TWA}"
+
+twa_output=$("${TWA}" "${TEST_DOMAIN}")
+
+[[ -n "${twa_output}" ]] || die "Empty twa output"
+
+# TODO: Test to ensure twa_output doesn't contain color codes.
+
+tscore_output=$("${TSCORE}" <<< "${twa_output}")
+
+[[ -n "${tscore_output}" ]] || die "Empty tscore output"
+
+read -r score \
+        npasses \
+        nmehs \
+        nfailures \
+        nunknowns \
+        nskips \
+        totally_screwed <<< "${tscore_output}"
+
+[[ "${score}" -ge 0 && "${score}" -le 100 ]] || die "Bizarre total score: ${score}"
+[[ "${npasses}" -ge 0 ]] || die "Negative passes? ${npasses}"
+[[ "${nmehs}" -ge 0 ]] || die "Negative mehs? ${nmehs}"
+[[ "${nfailures}" -ge 0 ]] || die "Negative failures? ${nfailures}"
+[[ "${nunknowns}" -ge 0 ]] || die "Negative unknowns? ${nunknowns}"
+[[ "${nskips}" -ge 0 ]] || die "Negative skips? ${nskips}"
+[[ "${totally_screwed}" -eq 0 || "${totally_screwed}" -eq 1 ]] \
+    || die "totally_screwed not 0 or 1: ${totally_screwed}"
+
+echo "OK"
+exit 0
