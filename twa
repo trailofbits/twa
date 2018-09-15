@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S-P/usr/local/bin:/usr/bin:${PATH} bash
 
 # twa: a tiny website auditing script
 
