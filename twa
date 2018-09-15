@@ -2,7 +2,7 @@
 
 # twa: a tiny website auditing script
 
-TWA_VERSION="1.0.0"
+TWA_VERSION="1.1.0"
 
 # TTY check to prevent breaking scripts
 # Respect the "NO_COLOR spec"
