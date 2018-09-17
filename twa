@@ -5,6 +5,7 @@
 TWA_VERSION="1.2.0"
 
 TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
+TWA_CURLOPTS=(${TWA_CURLOPTS})
 
 # TTY check to prevent breaking scripts
 # Respect the "NO_COLOR spec"
@@ -43,7 +44,7 @@ function ensure {
 }
 
 function fetch {
-  curl --max-time "${TWA_TIMEOUT}" "${@}"
+  curl --max-time "${TWA_TIMEOUT}" "${TWA_CURLOPTS[@]}" "${@}"
 }
 
 function fetch_headers {
