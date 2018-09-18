@@ -338,7 +338,7 @@ function stage_3_information_disclosure {
   if [[ -n "${server}" ]]; then
     server_wc=$(wc -w <<< "${server}")
     if [[ "${server_wc}" -le 1 ]]; then
-      if [[ "${server_wc}" == */* ]]; then
+      if [[ "${server}" == */* ]]; then
         FAIL "Site sends 'Server' with what looks like a version tag: ${server}"
       else
         PASS "Site sends 'Server', but probably only a vendor ID: ${server}"
