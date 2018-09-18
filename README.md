@@ -77,6 +77,18 @@ $ echo "score: ${score}"
 Like `twa`, `tscore` is opinionated. You can change its opinions (i.e., its score weights)
 by editing it.
 
+### Docker
+
+`twa` can be from a lightweight (29MB) Alpine Docker container.  
+
+```bash
+$ git clone https://github.com/woodruffw/twa.git
+$ cd twa
+$ docker build -t twa .
+$ docker run -it twa:latest -vw google.com
+```
+
+
 ## Contributing
 
 Check out the [contributing guidelines](CONTRIBUTING.md).
