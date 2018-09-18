@@ -1,7 +1,7 @@
 twa
 ===
 
-[![Build Status](https://travis-ci.org/woodruffw/twa.svg?branch=master)](https://travis-ci.org/woodruffw/twa)
+[![Build Status](https://travis-ci.org/trailofbits/twa.svg?branch=master)](https://travis-ci.org/trailofbits/twa)
 
 A **t**iny **w**eb **a**uditor with strong opinions.
 
