@@ -390,8 +390,22 @@ function stage_4_scm_repos {
   done
 }
 
+# Stage 5: Check if the server provides a robots.txt file.
+#
+# Check for "The Robots Exclusion Protocol".
+# Will follow redirects to ensure file exists.
+function stage_5_robots_check {
+  verbose "Stage 5: Robots Exclusion Protocol check"
 
-# Some ideas for a fifth stage:
+  http_response_code=$(curl -L -s -o /dev/null -w "%{http_code}" "${domain}/robots.txt")
+  if [[ ${http_response_code} == 200 ]]; then
+    PASS "Robots.txt is provided at: ${domain}/robots.txt"
+  else
+    MEH "No robots file found at: ${domain}/robots.txt"
+  fi
+}
+
+# Some ideas for a sixth stage:
 # * `dig +short caa $domain`
 #   * Good: They specify an issuer.
 #   * Meh: They specify an known bad issuer, or they specifically disallow all issuers.
@@ -433,4 +447,5 @@ stage_1_redirection
 stage_2_security_headers
 stage_3_information_disclosure
 stage_4_scm_repos
+stage_5_robots_check
 
