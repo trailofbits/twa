@@ -227,7 +227,7 @@ function stage_2_security_headers {
   fi
 
   xfo=$(get_header "X-Frame-Options" <<< "${headers}")
-  xfo=${xfo,,}
+  xfo=`echo ${xfo} | tr '[:upper:]' '[:lower:]'`
 
   if [[ -n "${xfo}" ]]; then
     if [[ "${xfo}" == "deny" ]]; then
@@ -246,7 +246,8 @@ function stage_2_security_headers {
   xcto=$(get_header "X-Content-Type-Options" <<< "${headers}")
 
   if [[ -n "${xcto}" ]]; then
-    if [[ "${xcto,,}" == "nosniff" ]]; then
+     xcto=`echo ${xcto} | tr '[:upper:]' '[:lower:]'`  
+    if [[ "${xcto}" == "nosniff" ]]; then
       PASS "X-Content-Type-Options is 'nosniff'"
     else
       UNK "X-Content-Type-Options set to something weird: ${xcto}"
@@ -256,8 +257,8 @@ function stage_2_security_headers {
   fi
 
   xxp=$(get_header "X-XSS-Protection" <<< "${headers}")
-  xxp=${xxp,,}
-
+  xxp=`echo ${xpp} | tr '[:upper:]' '[:lower:]'`
+  
   if [[ -n "${xxp}" ]]; then
     if [[ "${xxp}" == 0 ]]; then
       FAIL "X-XSS-Protection is '0'; XSS filtering disabled"
@@ -273,7 +274,7 @@ function stage_2_security_headers {
   fi
 
   rp=$(get_header "Referrer-Policy" <<< "${headers}")
-  rp=${rp,,}
+  rp=`echo ${rp} | tr '[:upper:]' '[:lower:]'`
 
   if [[ -n "${rp}" ]]; then
     if [[ "${rp}" == "no-referrer" ]]; then
@@ -396,8 +397,78 @@ function stage_4_scm_repos {
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
 #   * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
 
+function stage_5_CAA {
+  verbose "Stage 5: Certification Authority Authorization"
+  verbose "Which Certificate Authorities (CAs) are allowed to issue certificates for the domain"
+    code=`dig +short caa $domain`
+    number_of_lines=`echo $code|wc -l`
+    if [ $number_of_lines -gt 1 ];then
+      INFO "multiple CAAs specified, everyone join the party"
+      #Cloudflare currently set the following set of certs as CAA
+      if [ echo $code|grep -c 'issue “comodoca.com”' -gt 0 ];then
+        if [ echo $code|grep -c 'issue “digicert.com”' -gt 0 ];then
+          if [ echo $code|grep -c 'issue “globalsign.com”' -gt 0 ];then
+            if [ echo $code|grep -c 'issuewild “comodoca.com”' -gt 0 ];then
+              if [ echo $code|grep -c 'issuewild “digicert.com”' -gt 0 ];then
+                if [ echo $code|grep -c 'issuewild “globalsign.com”' -gt 0 ];then
+                  INFO "CAA is probably provided by Cloudflare"
+                fi
+              fi 
+            fi
+          fi
+        fi
+      fi
+    fi
+
+
+    echo $code| while read line ; do
+      flag=`echo $code |cut -d' ' -f1| sed -e 's/^"//' -e 's/"$//'`
+      tag=`echo $code |cut -d' ' -f2`
+      value=`echo $code|cut -d' ' -f3| sed -e 's/^"//' -e 's/"$//'`
+      #list does not match returned names at this stage
+      #if [ `grep -c $value certs/untrustcert.txt` -ne 0 ];then    
+      #  FAIL "CA is listed as untrusted!"
+      #elif [ `grep -c $value certs/trustcert.txt` -ne 0 ];then        
+      #   PASS "CA is listed as trusted"
+      #else
+      #   UNK "Got an unknown CA:"$code
+      #fi
+
+      if [[ -z "$code" ]]; then
+         FAIL "No CAA record or doesn't specify an issuer at all. Potentially vunerable to have CA changed/MTM"
+      elif [[ ${code} == ";" ]]; then
+         MEH "CAA disallowed all CAA issuers"
+      elif [ `echo $tag| grep -c "issue"` -ne 1 ]; then
+         FAIL "CAA incorectly specified"
+      elif [ ${flag} -eq 0 ] && [ $tag == "issue" ]; then
+         PASS "CAA issuer:"$value
+      else
+         UNK "Got a weird response code:"$code
+      fi
+    done
+
+    nmap $domain|grep open|cut -d/ -f1 | while read line ; do
+      INFO "port open:"$line
+      if [ $line -ne 80 ];then
+        if [ $(nmap --script ssl-cert,ssl-enum-ciphers -p $line $domain|grep -c weak) -ne 0 ];then
+          FAIL "Weak ciphers detected"
+        else
+          PASS "ciphers ok"
+        fi
+      fi
+    done
+
+    owner=$(whois $domain|grep Registrant:)
+    if [[ -z "$owner" ]]; then
+         FAIL "Owner details hidden. What are they hiding?"
+    else
+         PASS "$owner"
+    fi
+}
+
 ensure installed curl
 ensure installed nc
+ensure installed nmap
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
@@ -430,4 +501,4 @@ stage_1_redirection
 stage_2_security_headers
 stage_3_information_disclosure
 stage_4_scm_repos
-
+stage_5_CAA
