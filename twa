@@ -155,11 +155,8 @@ function stage_1_redirection {
   verbose "Stage 1: HTTP -> HTTPS redirection"
   headers=$(fetch_headers "http://${domain}")
 
-  read -r response location < <(
-      awk '/^HTTP/ { response = $2 }
-           /^Location:/ { location = $2 }
-           END { print response, location }' <<< "${headers}"
-    )
+  location=$(get_header "Location" <<< "${headers}")
+  read -r response < <(awk '/^HTTP/ { print $2 }' <<< "${headers}")
 
   if [[ "${location}" =~ ^https ]]; then
     if [[ "${response}" == 301 ]]; then
