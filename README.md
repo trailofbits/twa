@@ -79,7 +79,15 @@ by editing it.
 
 ### Docker
 
-`twa` can be from a lightweight (29MB) Alpine Docker container.  
+`twa` can be installed from a lightweight (29MB) Alpine Docker container.
+
+To install it from Docker Hub:
+
+```bash
+$ docker pull woodruffw/twa
+```
+
+or, to build it manually:
 
 ```bash
 $ git clone https://github.com/woodruffw/twa.git
