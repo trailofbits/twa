@@ -79,7 +79,7 @@ by editing it.
 
 ### Docker
 
-`twa` can be installed from a lightweight (29MB) Alpine Docker container.
+`twa` can be used from a lightweight (29MB) Alpine Docker container.
 
 To install it from Docker Hub:
 
