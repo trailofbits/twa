@@ -5,7 +5,7 @@
 TWA_VERSION="1.3.1"
 
 TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
-TWA_CURLOPTS=(${TWA_CURLOPTS})
+read -r -a TWA_CURLOPTS <<< "${TWA_CURLOPTS}"
 
 # TTY check to prevent breaking scripts
 # Respect the "NO_COLOR spec"
@@ -117,7 +117,7 @@ function stage_0_has_https {
   verbose "Stage 0: Server supports HTTPS"
 
   # First, just probe the domain to see if it listens on 443.
-  if ! nc -z -w2 "${domain}" 443 ; then
+  if ! nc -z -w2 "${domain}" 443 2>/dev/null; then
     FATAL "expected port 443 to be open, but it isn't"
     no_https=1 ; return
   fi
