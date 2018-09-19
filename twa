@@ -57,21 +57,20 @@ function fetch_respcode {
 }
 
 function get_header {
-  header="${1}"
+  header="${1,,}"
 
   verbose "Extracting ${header}"
 
-  awk "BEGIN { IGNORECASE = 1 }
-       /^${header}:/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
+  awk "tolower(\$0) ~ /^${header}:/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
 }
 
 function get_field {
-  field="${1}"
+  field="${1,,}"
 
   verbose "Extracting ${field}"
 
-  awk "BEGIN { RS = \";\"; IGNORECASE = 1 }
-      \$1 ~ /^${field}/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
+  awk "BEGIN { RS = \";\" }
+      tolower(\$1) ~ /^${field}/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
 }
 
 # PASS: A test passed with flying colors (nothing wrong at all).
