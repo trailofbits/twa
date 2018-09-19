@@ -5,7 +5,7 @@ twa
 
 A **t**iny **w**eb **a**uditor with strong opinions.
 
-## Usage
+## Usage 
 
 ### Dependencies
 
