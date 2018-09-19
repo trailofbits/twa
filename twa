@@ -397,11 +397,13 @@ function stage_4_scm_repos {
 function stage_5_robots_check {
   verbose "Stage 5: Robots Exclusion Protocol check"
 
-  http_response_code=$(curl -L -s -o /dev/null -w "%{http_code}" "${domain}/robots.txt")
-  if [[ ${http_response_code} == 200 ]]; then
-    PASS "Robots.txt is provided at: ${domain}/robots.txt"
-  else
+  code=$(fetch_respcode "${domain}/robots.txt")
+  if [[ "${code}" -eq 200 ]]; then
+    PASS "Site provides robots.txt at: ${domain}/robots.txt"
+  elif [[ "${code}" -eq 404 ]]; then
     MEH "No robots file found at: ${domain}/robots.txt"
+  else
+    UNK "Got a weird response code (${code}) when testing for robots.txt at: ${domain}/robots.txt"
   fi
 }
 
