@@ -324,7 +324,6 @@ function stage_2_security_headers {
 }
 
 
-#
 # Stage 3: The server should disclose a minimum amount of information about itself.
 #
 # Checks:
