@@ -43,8 +43,12 @@ function ensure {
     || die "Failed to run '$*'. Aborting."
 }
 
-function fetch {
+function fetch_secure {
   curl --max-time "${TWA_TIMEOUT}" "${TWA_CURLOPTS[@]}" "${@}"
+}
+
+function fetch {
+  curl --insecure --max-time "${TWA_TIMEOUT}" "${TWA_CURLOPTS[@]}" "${@}"
 }
 
 function fetch_headers {
