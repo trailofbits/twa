@@ -122,9 +122,17 @@ function stage_0_has_https {
   # First, just probe the domain to see if it listens on 443.
   if ! nc -z -w2 "${domain}" 443 2>/dev/null; then
     FATAL "expected port 443 to be open, but it isn't"
-    no_https=1 ; return
+    no_https=1
   fi
 
+  fetch_secure -o /dev/null "${domain}" 2>/dev/null
+  if [ "${?}" -eq 0 ]; then
+    fetch -o /dev/null "${domain}" 2>/dev/null
+    PASS "HTTPS is configured properly"
+  else
+     FATAL "HTTPS configuration is invalid"
+  fi
+  
   # The rest below would be cool, but is probably unnecessary since `curl`
   # won't connect to an insecure HTTPS server by default.
   # # Then, use `openssl` to retrieve the certificate and test its validity.
