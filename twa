@@ -137,28 +137,35 @@ function stage_0_has_https {
     FATAL "HTTPS configuration is invalid"
   fi
   
-  # The rest below would be cool, but is probably unnecessary since `curl`
-  # won't connect to an insecure HTTPS server by default.
-  # # Then, use `openssl` to retrieve the certificate and test its validity.
-  # cert=$(openssl s_client -connect "${domain}:443" < /dev/null)
+  # Use `openssl` to retrieve the certificate and test its validity.
+  cert=$(openssl s_client -showcerts -servername "${domain}" -connect "${domain}:443" 2> /dev/null)
 
-  # expiry=$(openssl x509 -noout -dates <<< "${cert}")
+  expiry=$(openssl x509 -noout -dates <<< "${cert}")
 
-  # not_before=$(grep -o "^notBefore=.+" <<< "${expiry}" | cut -d = -f2-)
-  # not_after=$(grep -o "^notAfter=.+" <<< "${expiry}" | cut -d = -f2-)
+  not_before_raw=$(grep -o -e "^notBefore=.*" <<< "${expiry}" | cut -d'=' -f2)
+  not_after_raw=$(grep -o -e "^notAfter=.*" <<< "${expiry}" | cut -d'=' -f2)
 
-  # if [[ -z "${not_before}" || -z "${not_after}" ]]; then
-  #   # I don't think this will ever happen, but it doesn't hurt to check.
-  #   FAIL "server sent a certificate, but it's missing either a notBefore or a notAfter?"
-  # else
-  #   not_before=$(date -d "${not_before}" +%s)
-  #   not_after=$(date -d "${not_after}" +%s)
-  #   now=$(date +%s)
+  if [ -z "${not_before_raw}" ]; then
+    FAIL "server sent a certificate, but it's missing 'notBefore'"
+  else
+    not_before=$(date -d "${not_before_raw}" +%s)
+    now=$(date +%s)
 
-  #   if [[ "${now}" -lt "${not_before}" ]]; then
-  #     FAIL ""
-  #   fi
-  # fi
+    if [[ "${now}" -lt "${not_before}" ]]; then
+      FAIL "server sent a certificate that isn't valid yet (will become valid on ${not_before_raw})"
+    fi
+  fi
+  
+  if [ -z "${not_after_raw}" ]; then
+    FAIL "server sent a certificate, but it's missing 'notAfter'"
+  else
+    not_after=$(date -d "${not_after_raw}" +%s)
+    now=$(date +%s)
+
+    if [[ "${now}" -gt "${not_after}" ]]; then
+      FAIL "server sent an expired certificate (expired on ${not_after_raw})"
+    fi
+  fi
 }
 
 
