@@ -84,13 +84,13 @@ by editing it.
 To install it from Docker Hub:
 
 ```bash
-$ docker pull woodruffw/twa
+$ docker pull trailofbits/twa
 ```
 
 or, to build it manually:
 
 ```bash
-$ git clone https://github.com/woodruffw/twa.git
+$ git clone https://github.com/trailofbits/twa.git
 $ cd twa
 $ docker build -t twa .
 $ docker run -it twa:latest -vw google.com
