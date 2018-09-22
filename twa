@@ -2,7 +2,7 @@
 
 # twa: a tiny website auditing script
 
-TWA_VERSION="1.3.1"
+TWA_VERSION="1.4.0"
 
 TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
 read -r -a TWA_CURLOPTS <<< "${TWA_CURLOPTS}"
