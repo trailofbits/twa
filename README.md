@@ -11,7 +11,7 @@ A **t**iny **w**eb **a**uditor with strong opinions.
 
 ### Dependencies
 
-You'll need `bash`, `awk`, `curl`, and `nc`, along with a fairly POSIX system.
+You'll need `bash` 4, `curl`, and `nc`, along with a fairly POSIX system.
 
 ### Auditing
 
