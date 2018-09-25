@@ -443,7 +443,7 @@ function stage_6_caa {
           UNK "Weird (nonstandard?) CAA tag: ${tag}"
         fi
       else
-        UNK "Weird CAA flags byte: ${flag} for ${tag} ${value}"
+        UNK "Nonzero CAA flags: ${flag} for ${tag} ${value}"
       fi
     done <<< "${records}"
   else
