@@ -402,16 +402,87 @@ function stage_5_robots_check {
   fi
 }
 
-# Some ideas for a sixth stage:
-# * `dig +short caa $domain`
-#   * Good: They specify an issuer.
-#   * Meh: They specify an known bad issuer, or they specifically disallow all issuers.
-#   * Fail: They don't have a CAA record or don't specify an issuer at all.
+# Stage 6: Check for CAA records.
+#
+# Checks:
+# * The domain should specify at least one issue record.
+# * The domain should specify at least one iodef record.
+function stage_6_caa {
+  verbose "Stage 6: CAA checks"
+
+  records=$(dig +short caa "${domain}")
+
+  issuers=()
+  wildcard_issuers=()
+  iodefs=()
+
+  if [[ -n "${records}" ]]; then
+    while read -r flag tag value; do
+      value="${value//\"}"
+
+      if [[ "${flag}" -eq 0 ]]; then
+        if [[ "${tag}" == "issue" ]]; then
+          if [[ -n "${value}" ]]; then
+            issuers+=("${value}")
+          else
+            UNK "Missing value for issue tag?"
+          fi
+        elif [[ "${tag}" == "issuewild" ]]; then
+          if [[ -n "${value}" ]]; then
+            wildcard_issuers+=("${value}")
+          else
+            UNK "Missing value for issuewild tag?"
+          fi
+        elif [[ "${tag}" == "iodef" ]]; then
+          if [[ -n "${value}" ]]; then
+            iodefs+=("${value}")
+          else
+            UNK "Missing value for iodef tag?"
+          fi
+        else
+          UNK "Weird (nonstandard?) CAA tag: ${tag}"
+        fi
+      else
+        UNK "Nonzero CAA flags: ${flag} for ${tag} ${value}"
+      fi
+    done <<< "${records}"
+  else
+    FAIL "No CAA records found"
+    return
+  fi
+
+  if [[ "${#issuers[@]}" -eq 0 ]]; then
+    FAIL "Domain doesn't specify any valid issuers"
+  elif [[ "${#issuers[@]}" -eq 1 && "${issuers[0]}" == ";" ]]; then
+    # NOTE(ww): If every site should have HTTPS, then every domain should have CAA
+    # record(s) that specify all valid issuers for certificates.
+    FAIL "Domain explicitly disallows all issuers"
+  else
+    PASS "Domain explicitly allows one or more issuers: ${issuers[*]}"
+  fi
+
+  # TODO(ww): What's the best "issuewild" state? Is there one?
+  # References:
+  # https://github.com/SSLMate/caatestsuite/issues/9
+  # https://community.qualys.com/message/41613-re-caa-feature-request-warn-when-there-is-no-issuewild
+
+  if [[ "${#iodefs[@]}" -eq 0 ]]; then
+    # NOTE(ww): This could be a failure, but it's more of a reporting shortcoming
+    # than a security/privacy issue.
+    MEH "Domain doesn't specify any violation reporting endpoints"
+  else
+    PASS "Domain specifies one or more reporting endpoints: ${iodefs[*]}"
+  fi
+}
+
+
+# Some ideas for a seventh stage:
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
-#   * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
+# * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
 
 ensure installed curl
 ensure installed nc
+ensure installed dig
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
@@ -445,4 +516,4 @@ stage_2_security_headers
 stage_3_information_disclosure
 stage_4_scm_repos
 stage_5_robots_check
-
+stage_6_caa
