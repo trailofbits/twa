@@ -6,7 +6,7 @@ LABEL creator woodruffw
 LABEL dockerfile_maintenance khast3x
 LABEL desc "A tiny web auditor with strong opinions."
 
-RUN apk add --no-cache bash git curl ncurses \
+RUN apk add --no-cache bash git curl ncurses bind-tools \
 && git clone https://github.com/trailofbits/twa.git
 WORKDIR twa
 RUN bash
