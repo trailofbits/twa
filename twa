@@ -202,9 +202,9 @@ function stage_2_security_headers {
   if [[ -n "${sts}" ]]; then
     if [[ -n "${sts_max_age}" ]]; then
       if [[ "${sts_max_age}" -ge 15768000 ]]; then
-        PASS "max-age is at least 6 months"
+        PASS "Strict-Transport-Security max-age is at least 6 months"
       else
-        MEH "max-age is less than 6 months"
+        MEH "Strict-Transport-Security max-age is less than 6 months"
       fi
     else
       UNK "Strict-Transport-Security received, but no max-age"
@@ -329,7 +329,7 @@ function stage_2_security_headers {
 # Checks:
 #  * The "Server:" header shouldn't contain a version number or OS distribution code.
 #  * The server shouldn't be sending common nonstandard identifying headers (X-Powered-By)
-function stage_3_information_disclosure {
+function stage_3_server_information_disclosure {
   verbose "Stage 3: Information disclosure"
   server=$(get_header "Server" <<< "${headers}")
 
@@ -360,14 +360,16 @@ function stage_3_information_disclosure {
 }
 
 
-# Stage 4: The server shouldn't be serving its source repository (git/svn/hg/etc).
+# Stage 4: The server shouldn't be serving SCM repositories or common environment files.
 #
 # Checks:
 # * GET /.git/HEAD should 404.
 # * GET /.hg/store/00manifest.i should 404.
 # * GET /.svn/entries should 404.
-function stage_4_scm_repos {
-  verbose "Stage 4: SCM repositories"
+# * GET /.env should 404.
+# * GET /.dockerenv should 404.
+function stage_4_repo_and_env_disclosure {
+  verbose "Stage 4: SCM repo and env file disclosure"
 
   for repo_file in .git/HEAD .hg/store/00manifest.i .svn/entries; do
     url="http://${domain}/${repo_file}"
@@ -381,6 +383,21 @@ function stage_4_scm_repos {
       PASS "No SCM repository at: ${url}"
     else
       UNK "Got a weird response code (${code}) when testing for SCM at: ${url}"
+    fi
+  done
+
+  for env_file in .env .dockerenv; do
+    url="http://${domain}/${env_file}"
+    code=$(fetch_respcode "${url}")
+
+    if [[ "${code}" -eq 200 ]]; then
+      FAIL "Environment file being served at: ${url}"
+    elif [[ "${code}" -eq 403 ]]; then
+      MEH "Possible environment file being served (maybe protected?) at: ${url}"
+    elif [[ "${code}" -eq 404 ]]; then
+      PASS "No environment file at: ${url}"
+    else
+      UNK "Got a weird response code (${code}) when testing for an environment file at: ${url}"
     fi
   done
 }
@@ -513,7 +530,7 @@ fi
 stage_0_has_https
 stage_1_redirection
 stage_2_security_headers
-stage_3_information_disclosure
-stage_4_scm_repos
+stage_3_server_information_disclosure
+stage_4_repo_and_env_disclosure
 stage_5_robots_check
 stage_6_caa
