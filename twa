@@ -43,6 +43,11 @@ function ensure {
     || die "Failed to run '$*'. Aborting."
 }
 
+function probe {
+  verbose "Probing ${1}:${2}"
+  nc -z -w "${TWA_TIMEOUT}" "${1}" "${2}" 2>/dev/null
+}
+
 function fetch {
   curl --max-time "${TWA_TIMEOUT}" "${TWA_CURLOPTS[@]}" "${@}"
 }
@@ -116,7 +121,7 @@ function stage_0_has_https {
   verbose "Stage 0: Server supports HTTPS"
 
   # First, just probe the domain to see if it listens on 443.
-  if ! nc -z -w2 "${domain}" 443 2>/dev/null; then
+  if ! probe "${domain}" 443 ; then
     FATAL "expected port 443 to be open, but it isn't"
     no_https=1 ; return
   fi
@@ -492,8 +497,34 @@ function stage_6_caa {
   fi
 }
 
+# Stage 7: Check for common open development/backend ports.
+#
+# Checks:
+#  * Each port should not respond to a connection request.
+function stage_7_open_development_ports {
+  dev_ports=(
+    3000 # node.js (express.js), ruby on rails
+    4443 # common https development port
+    4567 # sinatra
+    8000 # common http development port
+    8008 # common http development port
+    8080 # common http development port
+    8088 # common http development port
+    8081 # common http development port
+    8443 # common https development port
+    8888 # common http development port
+  )
 
-# Some ideas for a seventh stage:
+  for dev_port in "${dev_ports[@]}"; do
+    if probe "${domain}" "${dev_port}"; then
+      FAIL "Domain is listening on a development/backend port: ${dev_port}"
+    else
+      PASS "Domain is not listening on a development/backend port: ${dev_port}"
+    fi
+  done
+}
+
+# Some ideas for a eighth stage:
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
 # * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
 
@@ -534,3 +565,4 @@ stage_3_server_information_disclosure
 stage_4_repo_and_env_disclosure
 stage_5_robots_check
 stage_6_caa
+stage_7_open_development_ports
