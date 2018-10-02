@@ -80,7 +80,10 @@ function get_field {
 
 function output {
   if [[ -n "${csv}" ]]; then
-    echo "${1},${2},\"${*:3}\"";
+    message="${3//\"/\"\"}"
+    message="\"${message}\""
+
+    echo "${1},${2},${message}";
   else
     # default is ANSI
     # colorize first arg
