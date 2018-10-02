@@ -2,7 +2,7 @@
 
 # twa: a tiny website auditing script
 
-TWA_VERSION="1.5.1"
+TWA_VERSION="1.5.2"
 
 TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
 read -r -a TWA_CURLOPTS <<< "${TWA_CURLOPTS}"
@@ -440,6 +440,16 @@ function stage_5_robots_check {
   code=$(fetch_respcode "${domain}/robots.txt")
   if [[ "${code}" -eq 200 ]]; then
     PASS "Site provides robots.txt at: ${domain}/robots.txt"
+    robots=$(fetch -L -s "${domain}/robots.txt")
+
+    # set nocasematch option
+    shopt -s nocasematch
+
+    if [[ $robots =~ .*(admin|cgi-bin).* ]]
+    then
+       MEH "Robots.txt might be exposing some sensitive directories"
+    fi
+
   elif [[ "${code}" -eq 404 ]]; then
     MEH "No robots file found at: ${domain}/robots.txt"
   else
