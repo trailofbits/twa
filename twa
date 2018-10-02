@@ -79,19 +79,23 @@ function get_field {
 }
 
 function output {
-  # ANSII output only, for now
-  # colorize first arg
-  first="";
-  if [ "${1}" == "PASS" ]; then
-    first="${TWA_COLOR_GREEN}${1}${TWA_COLOR_RESET}";
-  elif [ "${1}" == "MEH" ]; then
-    first="${TWA_COLOR_BLUE}${1}${TWA_COLOR_RESET}";
-  elif [ "${1}" == "FAIL" ] || [ "${1}" == "FATAL" ]; then
-    first="${TWA_COLOR_RED}${1}${TWA_COLOR_RESET}";
-  elif [ "${1}" == "UNK" ] || [ "${1}" == "SKIP" ]; then
-    first="${TWA_COLOR_PURPLE}${1}${TWA_COLOR_RESET}";
+  if [[ -n "${csv}" ]]; then
+    echo "${1},${2},${@:3}";
+  else
+    # default is ANSI
+    # colorize first arg
+    first="";
+    if [ "${1}" == "PASS" ]; then
+      first="${TWA_COLOR_GREEN}${1}${TWA_COLOR_RESET}";
+    elif [ "${1}" == "MEH" ]; then
+      first="${TWA_COLOR_BLUE}${1}${TWA_COLOR_RESET}";
+    elif [ "${1}" == "FAIL" ] || [ "${1}" == "FATAL" ]; then
+      first="${TWA_COLOR_RED}${1}${TWA_COLOR_RESET}";
+    elif [ "${1}" == "UNK" ] || [ "${1}" == "SKIP" ]; then
+      first="${TWA_COLOR_PURPLE}${1}${TWA_COLOR_RESET}";
+    fi;
+    echo -e "$first(${2}): ${@:3}";
   fi;
-  echo -e "$first(${2}): ${@:3}";
 }
 
 # PASS: A test passed with flying colors (nothing wrong at all).
@@ -554,12 +558,13 @@ ensure installed dig
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
-while getopts ":wvV" opt; do
+while getopts ":wvVc" opt; do
   case "${opt}" in
     w ) www=1 ;;
     v ) verbose=1 ;;
     V ) echo "twa version ${TWA_VERSION}" ; exit ;;
-    \? ) echo "Usage: twa [-vw] <domain>"; exit ;;
+    c ) csv=1 ;;
+    \? ) echo "Usage: twa [-cvw] <domain>"; exit ;;
   esac
 done
 
