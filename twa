@@ -78,34 +78,50 @@ function get_field {
       tolower(\$1) ~ /^${field}/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
 }
 
+function output {
+  # ANSII output only, for now
+  # colorize first arg
+  first="";
+  if [ "${1}" == "PASS" ]; then
+    first="${TWA_COLOR_GREEN}${1}${TWA_COLOR_RESET}";
+  elif [ "${1}" == "MEH" ]; then
+    first="${TWA_COLOR_BLUE}${1}${TWA_COLOR_RESET}";
+  elif [ "${1}" == "FAIL" ] || [ "${1}" == "FATAL" ]; then
+    first="${TWA_COLOR_RED}${1}${TWA_COLOR_RESET}";
+  elif [ "${1}" == "UNK" ] || [ "${1}" == "SKIP" ]; then
+    first="${TWA_COLOR_PURPLE}${1}${TWA_COLOR_RESET}";
+  fi;
+  echo -e "$first(${2}): ${@:3}";
+}
+
 # PASS: A test passed with flying colors (nothing wrong at all).
 function PASS {
-  echo -e "${TWA_COLOR_GREEN}PASS${TWA_COLOR_RESET}(${domain}): $*"
+  output "PASS" "${domain}" "$*";
 }
 
 # MEH: A test passed, but with one or more things that could be improved.
 function MEH {
-  echo -e "${TWA_COLOR_BLUE}MEH${TWA_COLOR_RESET}(${domain}): $*"
+  output "MEH" "${domain}" "$*";
 }
 
 # FAIL: A test failed, and should be fixed.
 function FAIL {
-  echo -e "${TWA_COLOR_RED}FAIL${TWA_COLOR_RESET}(${domain}): $*"
+  output "FAIL" "${domain}" "$*";
 }
 
 # FATAL: A really important test failed, and should be fixed immediately.
 function FATAL {
-  echo -e "${TWA_COLOR_RED}FATAL${TWA_COLOR_RESET}(${domain}): $*"
+  output "FATAL" "${domain}" "$*";
 }
 
 # UNK: The server gave us something we didn't understand.
 function UNK {
-  echo -e "${TWA_COLOR_PURPLE}UNK${TWA_COLOR_RESET}(${domain}): $*"
+  output "UNK" "${domain}" "$*";
 }
 
 # SKIP: This test hasn't been implemented yet.
 function SKIP {
-  echo -e "${TWA_COLOR_PURPLE}SKIP${TWA_COLOR_RESET}(${domain}): $*"
+  output "SKIP" "${domain}" "$*";
 }
 
 
