@@ -583,6 +583,11 @@ if [[ -n "${www}" ]]; then
   fi
 fi
 
+# If we're in CSV mode, write some column titles.
+if [[ -n "${csv}" ]]; then
+  output status domain message
+fi
+
 stage_0_has_https
 stage_1_redirection
 stage_2_security_headers
