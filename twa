@@ -558,12 +558,12 @@ ensure installed dig
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
-while getopts ":wvVc" opt; do
+while getopts ":wvcV" opt; do
   case "${opt}" in
     w ) www=1 ;;
     v ) verbose=1 ;;
-    V ) echo "twa version ${TWA_VERSION}" ; exit ;;
     c ) csv=1 ;;
+    V ) echo "twa version ${TWA_VERSION}" ; exit ;;
     \? ) echo "Usage: twa [-cvw] <domain>"; exit ;;
   esac
 done
