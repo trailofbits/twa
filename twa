@@ -444,12 +444,12 @@ function stage_5_robots_check {
     PASS "Site provides robots.txt at: ${domain}/robots.txt"
     robots=$(fetch -L -s "${domain}/robots.txt")
 
-    if [[ $robots =~ .*admin.* ]]; then
-       MEH "robots.txt lists admin panels"
+    if [[ "${robots}" =~ .*admin.* ]]; then
+       MEH "robots.txt lists what looks like an admin panel"
     fi
 
-    if [[ $robots =~ .*cgi-bin.* ]]; then
-       MEH "robots.txt lists CGI scripts"
+    if [[ "${robots}" =~ .*cgi-bin.* ]]; then
+       MEH "robots.txt lists what looks like CGI scripts"
     fi
 
   elif [[ "${code}" -eq 404 ]]; then
