@@ -99,7 +99,7 @@ function output {
     elif [ "${1}" == "UNK" ] || [ "${1}" == "SKIP" ]; then
       first="${TWA_COLOR_PURPLE}${1}${TWA_COLOR_RESET}";
     fi;
-    echo -e "$first(${2}): ${*:3}";
+    echo -e "$first(${2}): ${3}";
   fi;
 }
 
