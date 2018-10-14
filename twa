@@ -607,6 +607,22 @@ function stage_8_cookie_checks {
     FAIL "Not all cookies have the secure flag"
   fi
 
+  if [[ -n "${cookies}" ]]; then
+    mapfile -t cookiearray <<< "${cookies}"
+
+    for cookie in "${cookiearray[@]}"; do
+      cookie_name=$(cut -d= -f1 <<< "${cookie}")
+      has_httponly=$(get_field "HttpOnly" <<< "${cookie}")
+
+      if [[ -z "${has_httponly}" ]]; then
+        MEH "cookie '${cookie_name}' doesn't have httponly flag"
+      else
+        PASS "cookie '${cookie_name}' has httponly flag"
+      fi
+    done
+  else
+    PASS "There are no cookies (httponly flag check)"
+  fi
 }
 
 # Some ideas for a eighth stage:
