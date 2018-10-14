@@ -80,19 +80,26 @@ function get_field {
       tolower(\$1) ~ /^${field}/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
 }
 
-function cookies_are_secure {
+function get_cookies {
   cookieheader="set-cookie"
+
+  verbose "Extracting cookies from headers"
+
+  awk "tolower(\$0) ~ /^${cookieheader}:/ { print substr(\$0, index(\$0, \$2)) }"
+}
+
+function cookies_are_secure {
   secureflag="secure"
 
   verbose "Verifying all cookies have the secure flag"
 
-  mapfile -t cookies < <(awk "tolower(\$0) ~ /^${cookieheader}:/ { print substr(\$0, index(\$0, \$2)) }")
+  mapfile -t cookiearray
 
-  if [ ${#cookies[@]} -eq 0  ]; then
+  if [ ${#cookiearray[@]} -eq 0 ]; then
     return 0
   fi
 
-  for cookie in "${cookies[@]}"; do
+  for cookie in "${cookiearray[@]}"; do
     is_secure=$(get_field "${secureflag}" <<< "${cookie}")
     if [ -z "$is_secure" ]; then
       return 1
@@ -592,8 +599,9 @@ function stage_8_cookie_checks {
   verbose "Stage 8: Cookie checks"
 
   headers=$(fetch_headers "https://${domain}")
+  cookies=$(get_cookies <<< "${headers}")
 
-  if cookies_are_secure <<< "${headers}"; then
+  if [[ -z "${cookies}" ]] || cookies_are_secure <<< "${cookies}"; then
     PASS "All cookies have the secure flag"
   else
     FAIL "Not all cookies have the secure flag"
