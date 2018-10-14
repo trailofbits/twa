@@ -601,13 +601,14 @@ function stage_8_cookie_checks {
   headers=$(fetch_headers "https://${domain}")
   cookies=$(get_cookies <<< "${headers}")
 
-  if [[ -z "${cookies}" ]] || cookies_are_secure <<< "${cookies}"; then
-    PASS "All cookies have the secure flag"
-  else
-    FAIL "Not all cookies have the secure flag"
-  fi
-
   if [[ -n "${cookies}" ]]; then
+
+    if cookies_are_secure <<< "${cookies}"; then
+      PASS "All cookies have the secure flag"
+    else
+      FAIL "Not all cookies have the secure flag"
+    fi
+
     mapfile -t cookiearray <<< "${cookies}"
 
     for cookie in "${cookiearray[@]}"; do
@@ -620,8 +621,9 @@ function stage_8_cookie_checks {
         PASS "cookie '${cookie_name}' has httponly flag"
       fi
     done
+
   else
-    PASS "There are no cookies (httponly flag check)"
+    PASS "There are no cookies (cookie checks)"
   fi
 }
 
