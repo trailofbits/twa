@@ -80,6 +80,26 @@ function get_field {
       tolower(\$1) ~ /^${field}/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
 }
 
+function cookies_are_secure {
+  cookieheader="set-cookie"
+  secureflag="secure"
+
+  verbose "Verifying all cookies have the secure flag"
+
+  mapfile -t cookies < <(awk "tolower(\$0) ~ /^${cookieheader}:/ { print substr(\$0, index(\$0, \$2)) }")
+
+  if [ ${#cookies[@]} -eq 0  ]; then
+    return 0
+  fi
+
+  for cookie in "${cookies[@]}"; do
+    is_secure=$(get_field "${secureflag}" <<< "${cookie}")
+    if [ -z "$is_secure" ]; then
+      return 1
+    fi
+  done
+}
+
 function output {
   if [[ -n "${csv}" ]]; then
     message="${3//\"/\"\"}"
@@ -563,6 +583,24 @@ function stage_7_open_development_ports {
   done
 }
 
+# Stage 8: Cookie checks.
+#
+# Checks:
+#  * all cookies must have the secure flag.
+#  * each cookie should have the httponly flag. one MEH for each cookie that doesn't.
+function stage_8_cookie_checks {
+  verbose "Stage 8: Cookie checks"
+
+  headers=$(fetch_headers "https://${domain}")
+
+  if cookies_are_secure <<< "${headers}"; then
+    PASS "All cookies have the secure flag"
+  else
+    FAIL "Not all cookies have the secure flag"
+  fi
+
+}
+
 # Some ideas for a eighth stage:
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
 # * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
@@ -611,3 +649,4 @@ stage_4_repo_and_env_disclosure
 stage_5_robots_check
 stage_6_caa
 stage_7_open_development_ports
+stage_8_cookie_checks
