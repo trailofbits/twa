@@ -80,6 +80,12 @@ function get_field {
       tolower(\$1) ~ /^${field}/ { print substr(\$0, index(\$0, \$2)) }" | tr -d '\r\n'
 }
 
+function get_cookies {
+  verbose "Extracting cookies from headers"
+
+  awk "tolower(\$0) ~ /^set-cookie:/ { print substr(\$0, index(\$0, \$2)) }"
+}
+
 function output {
   if [[ -n "${csv}" ]]; then
     message="${3//\"/\"\"}"
@@ -563,6 +569,38 @@ function stage_7_open_development_ports {
   done
 }
 
+# Stage 8: Cookie checks.
+#
+# Checks:
+#  * all cookies must have the secure flag.
+#  * each cookie should have the httponly flag. one MEH for each cookie that doesn't.
+function stage_8_cookie_checks {
+  verbose "Stage 8: Cookie checks"
+
+  headers=$(fetch_headers "https://${domain}")
+  cookies=$(get_cookies <<< "${headers}")
+
+  if [[ -n "${cookies}" ]]; then
+
+    mapfile -t cookiearray <<< "${cookies}"
+
+    for cookie in "${cookiearray[@]}"; do
+      cookie_name=$(cut -d= -f1 <<< "${cookie}")
+      has_secure=$(get_field "secure" <<< "${cookie}")
+      has_httponly=$(get_field "HttpOnly" <<< "${cookie}")
+
+      if [[ -n "${has_secure}" && -n "${has_httponly}" ]]; then
+        PASS "cookie '${cookie_name}' has both 'secure' and 'httponly' flags"
+      elif [[ -n "${has_secure}" && -z "${has_httponly}" ]]; then
+        MEH "cookie '${cookie_name}' has 'secure' but no 'httponly' flag"
+      else
+        FAIL "cookie '${cookie_name}' has no 'secure' flag"
+      fi
+    done
+
+  fi
+}
+
 # Some ideas for a eighth stage:
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
 # * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
@@ -611,3 +649,4 @@ stage_4_repo_and_env_disclosure
 stage_5_robots_check
 stage_6_caa
 stage_7_open_development_ports
+stage_8_cookie_checks
