@@ -81,30 +81,9 @@ function get_field {
 }
 
 function get_cookies {
-  cookieheader="set-cookie"
-
   verbose "Extracting cookies from headers"
 
-  awk "tolower(\$0) ~ /^${cookieheader}:/ { print substr(\$0, index(\$0, \$2)) }"
-}
-
-function cookies_are_secure {
-  secureflag="secure"
-
-  verbose "Verifying all cookies have the secure flag"
-
-  mapfile -t cookiearray
-
-  if [ ${#cookiearray[@]} -eq 0 ]; then
-    return 0
-  fi
-
-  for cookie in "${cookiearray[@]}"; do
-    is_secure=$(get_field "${secureflag}" <<< "${cookie}")
-    if [ -z "$is_secure" ]; then
-      return 1
-    fi
-  done
+  awk "tolower(\$0) ~ /^set-cookie:/ { print substr(\$0, index(\$0, \$2)) }"
 }
 
 function output {
@@ -603,27 +582,22 @@ function stage_8_cookie_checks {
 
   if [[ -n "${cookies}" ]]; then
 
-    if cookies_are_secure <<< "${cookies}"; then
-      PASS "All cookies have the secure flag"
-    else
-      FAIL "Not all cookies have the secure flag"
-    fi
-
     mapfile -t cookiearray <<< "${cookies}"
 
     for cookie in "${cookiearray[@]}"; do
       cookie_name=$(cut -d= -f1 <<< "${cookie}")
+      has_secure=$(get_field "secure" <<< "${cookie}")
       has_httponly=$(get_field "HttpOnly" <<< "${cookie}")
 
-      if [[ -z "${has_httponly}" ]]; then
-        MEH "cookie '${cookie_name}' doesn't have httponly flag"
+      if [[ -n "${has_secure}" && -n "${has_httponly}" ]]; then
+        PASS "cookie '${cookie_name}' has both 'secure' and 'httponly' flags"
+      elif [[ -n "${has_secure}" && -z "${has_httponly}" ]]; then
+        MEH "cookie '${cookie_name}' has 'secure' but no 'httponly' flag"
       else
-        PASS "cookie '${cookie_name}' has httponly flag"
+        FAIL "cookie '${cookie_name}' has no 'secure' flag"
       fi
     done
 
-  else
-    PASS "There are no cookies (cookie checks)"
   fi
 }
 
