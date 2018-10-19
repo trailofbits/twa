@@ -4,7 +4,7 @@
 
 shopt -s nocasematch
 
-TWA_VERSION="1.5.1"
+TWA_VERSION="1.6.0"
 
 TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
 read -r -a TWA_CURLOPTS <<< "${TWA_CURLOPTS}"
