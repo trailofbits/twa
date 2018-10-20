@@ -43,7 +43,7 @@ declare -A TWA_CODES=(
   # Stage 3
   [TWA-0301]="Site sends 'Server' with what looks like a version tag: \${server}"
   [TWA-0302]="Site sends a long 'Server', probably disclosing version info: \${server}"
-  [TWA-0303]="Site sends '\${badheader}, probably disclosing version info: \${content}'"
+  [TWA-0303]="Site sends '\${badheader}', probably disclosing version info: '\${content}'"
 
   # Stage 4
   [TWA-0401]="SCM repository being served at: \${url}"
