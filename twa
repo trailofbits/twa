@@ -548,11 +548,11 @@ function stage_6_caa {
   iodefs=()
 
   if [[ -n "${records}" ]]; then
-    while read -r -a RECORD; do
-      type="${RECORD[3]}"
-      flag="${RECORD[4]}"
-      tag="${RECORD[5]}"
-      value="${RECORD[6]//\"}"
+    while read -r -a record; do
+      type="${record[3]}"
+      flag="${record[4]}"
+      tag="${record[5]}"
+      value="${record[6]//\"}"
 
       if [[ "${type}" == "CAA" ]]; then
         if [[ -n "${flag}" && -n "${tag}" && -n "${value}" ]]; then
