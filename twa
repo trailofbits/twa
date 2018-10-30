@@ -548,8 +548,11 @@ function stage_6_caa {
   iodefs=()
 
   if [[ -n "${records}" ]]; then
-    while read -r domain ttl class type flag tag value; do
-      value="${value//\"}"
+    while read -r -a RECORD; do
+      type="${RECORD[3]}"
+      flag="${RECORD[4]}"
+      tag="${RECORD[5]}"
+      value="${RECORD[6]//\"}"
 
       if [[ "${type}" == "CAA" ]]; then
         if [[ -n "${flag}" && -n "${tag}" && -n "${value}" ]]; then
