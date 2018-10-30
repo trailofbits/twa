@@ -541,44 +541,46 @@ function stage_5_robots_check {
 function stage_6_caa {
   verbose "Stage 6: CAA checks"
 
-  records=$(dig +short caa "${domain}")
+  records=$(dig +noall +answer caa "${domain}")
 
   issuers=()
   wildcard_issuers=()
   iodefs=()
 
   if [[ -n "${records}" ]]; then
-    while read -r flag tag value; do
+    while read -r domain ttl class type flag tag value; do
       value="${value//\"}"
 
-      if [[ -n "${flag}" && -n "${tag}" && -n "${value}" ]]; then
-        if [[ "${flag}" -eq 0 ]]; then
-          if [[ "${tag}" == "issue" ]]; then
-            if [[ -n "${value}" ]]; then
-              issuers+=("${value}")
+      if [[ "${type}" == "CAA" ]]; then
+        if [[ -n "${flag}" && -n "${tag}" && -n "${value}" ]]; then
+          if [[ "${flag}" -eq 0 ]]; then
+            if [[ "${tag}" == "issue" ]]; then
+              if [[ -n "${value}" ]]; then
+                issuers+=("${value}")
+              else
+                UNK "Missing value for issue tag?"
+              fi
+            elif [[ "${tag}" == "issuewild" ]]; then
+              if [[ -n "${value}" ]]; then
+                wildcard_issuers+=("${value}")
+              else
+                UNK "Missing value for issuewild tag?"
+              fi
+            elif [[ "${tag}" == "iodef" ]]; then
+              if [[ -n "${value}" ]]; then
+                iodefs+=("${value}")
+              else
+                UNK "Missing value for iodef tag?"
+              fi
             else
-              UNK "Missing value for issue tag?"
-            fi
-          elif [[ "${tag}" == "issuewild" ]]; then
-            if [[ -n "${value}" ]]; then
-              wildcard_issuers+=("${value}")
-            else
-              UNK "Missing value for issuewild tag?"
-            fi
-          elif [[ "${tag}" == "iodef" ]]; then
-            if [[ -n "${value}" ]]; then
-              iodefs+=("${value}")
-            else
-              UNK "Missing value for iodef tag?"
+              UNK "Weird (nonstandard?) CAA tag: ${tag}"
             fi
           else
-            UNK "Weird (nonstandard?) CAA tag: ${tag}"
+            UNK "Nonzero CAA flags: ${flag} for ${tag} ${value}"
           fi
         else
-          UNK "Nonzero CAA flags: ${flag} for ${tag} ${value}"
+          UNK "Malformed CAA record? (flag=${flag}, tag=${tag}, value=${value})"
         fi
-      else
-        UNK "Malformed CAA record? (flag=${flag}, tag=${tag}, value=${value})"
       fi
     done <<< "${records}"
   else
