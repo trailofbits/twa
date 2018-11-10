@@ -264,7 +264,7 @@ function stage_1_redirection {
   if [[ "${location}" =~ ^https ]]; then
     if [[ "${response}" =~ ^30[18]$ ]]; then
       PASS "HTTP redirects to HTTPS using a ${response}"
-    elif [[ "${response}" == 302 ]]; then
+    elif [[ "${response}" =~ ^30[27]$ ]]; then
       MEH TWA-0101
     else
       UNK "HTTP sends an HTTPS location but with a weird response code: ${response}"
