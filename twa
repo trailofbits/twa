@@ -50,6 +50,12 @@ declare -A TWA_CODES=(
   [TWA-0402]="Possible SCM repository being served (maybe protected?) at: \${url}"
   [TWA-0403]="Environment file being served at: \${url}"
   [TWA-0404]="Possible environment file being served (maybe protected?) at: \${url}"
+  [TWA-0405]="Config file being served at: \${url}"
+  [TWA-0406]="Possible config file being served (maybe protected?) at: \${url}"
+  [TWA-0407]="Package management file being served at: \${url}"
+  [TWA-0408]="Possible package management file being served (maybe protected?) at: \${url}"
+  [TWA-0409]="Build file being served at: \${url}"
+  [TWA-0410]="Possible build file being served (maybe protected?) at: \${url}"
 
   # Stage 5
   [TWA-0501]="No robots file found at: \${domain}/robots.txt"
@@ -502,6 +508,51 @@ function stage_4_repo_and_env_disclosure {
       PASS "No environment file at: ${url}"
     else
       UNK "Got a weird response code (${code}) when testing for an environment file at: ${url}"
+    fi
+  done
+
+  for config_file in config.xml config.json config.yaml config.yml config.ini config.cfg; do
+    url="http://${domain}/${config_file}"
+    code=$(fetch_respcode "${url}")
+
+    if [[ "${code}" -eq 200 ]]; then
+      FAIL TWA-0405
+    elif [[ "${code}" -eq 403 ]]; then
+      MEH TWA-0406
+    elif [[ "${code}" -eq 404 ]]; then
+      PASS "No config file at: ${url}"
+    else
+      UNK "Got a weird response code (${code}) when testing for a config file at: ${url}"
+    fi
+  done
+
+  for pm_file in .npmrc Gemfile Gemfile.lock Rakefile setup.py requirements.txt; do
+    url="http://${domain}/${pm_file}"
+    code=$(fetch_respcode "${url}")
+
+    if [[ "${code}" -eq 200 ]]; then
+      FAIL TWA-0407
+    elif [[ "${code}" -eq 403 ]]; then
+      MEH TWA-0408
+    elif [[ "${code}" -eq 404 ]]; then
+      PASS "No package management file at: ${url}"
+    else
+      UNK "Got a weird response code (${code}) when testing for a config file at: ${url}"
+    fi
+  done
+
+  for build_file in Makefile CMakeLists.txt; do
+    url="http://${domain}/${build_file}"
+    code=$(fetch_respcode "${url}")
+
+    if [[ "${code}" -eq 200 ]]; then
+      FAIL TWA-0409
+    elif [[ "${code}" -eq 403 ]]; then
+      MEH TWA-0410
+    elif [[ "${code}" -eq 404 ]]; then
+      PASS "No build file at: ${url}"
+    else
+      UNK "Got a weird response code (${code}) when testing for a config file at: ${url}"
     fi
   done
 }
