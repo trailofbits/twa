@@ -7,6 +7,7 @@ shopt -s nocasematch
 TWA_VERSION="1.6.2"
 
 TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
+TWA_USER_AGENT="${TWA_USER_AGENT:-Mozilla/5.0}"
 read -r -a TWA_CURLOPTS <<< "${TWA_CURLOPTS}"
 
 declare -A TWA_CODES=(
@@ -122,7 +123,7 @@ function probe {
 }
 
 function fetch {
-  curl --max-time "${TWA_TIMEOUT}" "${TWA_CURLOPTS[@]}" "${@}"
+  curl "${TWA_CURLOPTS[@]}" -A "'${TWA_USER_AGENT}'" --max-time "${TWA_TIMEOUT}" "${@}"
 }
 
 function fetch_headers {
