@@ -132,7 +132,7 @@ function fetch_headers {
 }
 
 function fetch_respcode {
-  fetch -o /dev/null -s -I -L -w "%{http_code}" "${1}"
+  fetch -o /dev/null -s -I -L -w "%{http_code} %{url_effective}" "${1}"
 }
 
 function get_header {
@@ -484,14 +484,17 @@ function stage_4_repo_and_env_disclosure {
 
   for repo_file in .git/HEAD .hg/store/00manifest.i .svn/entries; do
     url="http://${domain}/${repo_file}"
-    code=$(fetch_respcode "${url}")
 
-    if [[ "${code}" -eq 200 ]]; then
+    read -r -a resp < <(fetch_respcode "${url}")
+    code="${resp[0]}"
+    eurl="${resp[1]}"
+
+    if [[ "${code}" -eq 404 || "${eurl}" != *${repo_file} ]]; then
+      PASS "No SCM repository at: ${url}"
+    elif [[ "${code}" -eq 200 ]]; then
       FAIL TWA-0401
     elif [[ "${code}" -eq 403 ]]; then
       MEH TWA-0402
-    elif [[ "${code}" -eq 404 ]]; then
-      PASS "No SCM repository at: ${url}"
     else
       UNK "Got a weird response code (${code}) when testing for SCM at: ${url}"
     fi
@@ -499,14 +502,17 @@ function stage_4_repo_and_env_disclosure {
 
   for env_file in .env .dockerenv; do
     url="http://${domain}/${env_file}"
-    code=$(fetch_respcode "${url}")
 
-    if [[ "${code}" -eq 200 ]]; then
+    read -r -a resp < <(fetch_respcode "${url}")
+    code="${resp[0]}"
+    eurl="${resp[1]}"
+
+    if [[ "${code}" -eq 404 || "${eurl}" != *${env_file} ]]; then
+      PASS "No environment file at: ${url}"
+    elif [[ "${code}" -eq 200 ]]; then
       FAIL TWA-0403
     elif [[ "${code}" -eq 403 ]]; then
       MEH TWA-0404
-    elif [[ "${code}" -eq 404 ]]; then
-      PASS "No environment file at: ${url}"
     else
       UNK "Got a weird response code (${code}) when testing for an environment file at: ${url}"
     fi
@@ -514,14 +520,17 @@ function stage_4_repo_and_env_disclosure {
 
   for config_file in config.xml config.json config.yaml config.yml config.ini config.cfg; do
     url="http://${domain}/${config_file}"
-    code=$(fetch_respcode "${url}")
 
-    if [[ "${code}" -eq 200 ]]; then
+    read -r -a resp < <(fetch_respcode "${url}")
+    code="${resp[0]}"
+    eurl="${resp[1]}"
+
+    if [[ "${code}" -eq 404 || "${eurl}" != *${config_file} ]]; then
+      PASS "No config file at: ${url}"
+    elif [[ "${code}" -eq 200 ]]; then
       FAIL TWA-0405
     elif [[ "${code}" -eq 403 ]]; then
       MEH TWA-0406
-    elif [[ "${code}" -eq 404 ]]; then
-      PASS "No config file at: ${url}"
     else
       UNK "Got a weird response code (${code}) when testing for a config file at: ${url}"
     fi
@@ -529,14 +538,17 @@ function stage_4_repo_and_env_disclosure {
 
   for pm_file in .npmrc Gemfile Gemfile.lock Rakefile setup.py requirements.txt; do
     url="http://${domain}/${pm_file}"
-    code=$(fetch_respcode "${url}")
 
-    if [[ "${code}" -eq 200 ]]; then
+    read -r -a resp < <(fetch_respcode "${url}")
+    code="${resp[0]}"
+    eurl="${resp[1]}"
+
+    if [[ "${code}" -eq 404 || "${eurl}" != *${pm_file} ]]; then
+      PASS "No package management file at: ${url}"
+    elif [[ "${code}" -eq 200 ]]; then
       FAIL TWA-0407
     elif [[ "${code}" -eq 403 ]]; then
       MEH TWA-0408
-    elif [[ "${code}" -eq 404 ]]; then
-      PASS "No package management file at: ${url}"
     else
       UNK "Got a weird response code (${code}) when testing for a config file at: ${url}"
     fi
@@ -544,14 +556,17 @@ function stage_4_repo_and_env_disclosure {
 
   for build_file in Makefile CMakeLists.txt; do
     url="http://${domain}/${build_file}"
-    code=$(fetch_respcode "${url}")
 
-    if [[ "${code}" -eq 200 ]]; then
+    read -r -a resp < <(fetch_respcode "${url}")
+    code="${resp[0]}"
+    eurl="${resp[1]}"
+
+    if [[ "${code}" -eq 404 || "${eurl}" != *${build_file} ]]; then
+      PASS "No build file at: ${url}"
+    elif [[ "${code}" -eq 200 ]]; then
       FAIL TWA-0409
     elif [[ "${code}" -eq 403 ]]; then
       MEH TWA-0410
-    elif [[ "${code}" -eq 404 ]]; then
-      PASS "No build file at: ${url}"
     else
       UNK "Got a weird response code (${code}) when testing for a config file at: ${url}"
     fi
@@ -565,7 +580,9 @@ function stage_4_repo_and_env_disclosure {
 function stage_5_robots_check {
   verbose "Stage 5: Robots Exclusion Protocol check"
 
-  code=$(fetch_respcode "${domain}/robots.txt")
+  read -r -a resp < <(fetch_respcode "${url}")
+  code="${resp[0]}"
+
   if [[ "${code}" -eq 200 ]]; then
     PASS "Site provides robots.txt at: ${domain}/robots.txt"
     robots=$(fetch -L -s "${domain}/robots.txt")
