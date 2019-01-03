@@ -89,10 +89,10 @@ by editing it.
 
 `twa` can be used from a lightweight (29MB) Alpine Docker container.
 
-To install it from Docker Hub:
+To run it from a Docker container:
 
 ```bash
-$ docker pull trailofbits/twa
+$ docker run -t trailofbits/twa -vw google.com
 ```
 
 or, to build it manually:
