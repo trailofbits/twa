@@ -62,6 +62,7 @@ declare -A TWA_CODES=(
   [TWA-0501]="No robots file found at: \${domain}/robots.txt"
   [TWA-0502]="robots.txt lists what looks like an admin panel"
   [TWA-0503]="robots.txt lists what looks like CGI scripts"
+  [TWA-0504]="No security file found at: \${domain}/.well-known/security.txt"
 
   # Stage 6
   [TWA-0601]="No CAA records found"
@@ -577,15 +578,16 @@ function stage_4_repo_and_env_disclosure {
 #
 # Check for "The Robots Exclusion Protocol".
 # Will follow redirects to ensure file exists.
-function stage_5_robots_check {
-  verbose "Stage 5: Robots Exclusion Protocol check"
+function stage_5_robots_and_security_check {
+  verbose "Stage 5: robots.txt and security.txt checks"
 
+  url="${domain}/robots.txt"
   read -r -a resp < <(fetch_respcode "${url}")
   code="${resp[0]}"
 
   if [[ "${code}" -eq 200 ]]; then
-    PASS "Site provides robots.txt at: ${domain}/robots.txt"
-    robots=$(fetch -L -s "${domain}/robots.txt")
+    PASS "Site provides robots.txt"
+    robots=$(fetch -L -s "${url}")
 
     if [[ "${robots}" =~ .*admin.* ]]; then
        MEH TWA-0502
@@ -594,11 +596,24 @@ function stage_5_robots_check {
     if [[ "${robots}" =~ .*cgi-bin.* ]]; then
        MEH TWA-0503
     fi
-
   elif [[ "${code}" -eq 404 ]]; then
     MEH TWA-0501
   else
-    UNK "Got a weird response code (${code}) when testing for robots.txt at: ${domain}/robots.txt"
+    UNK "Got a weird response code (${code}) when testing for robots.txt at: ${url}"
+  fi
+
+  url="${domain}/.well-known/security.txt"
+  read -r -a resp < <(fetch_respcode "${url}")
+  code="${resp[0]}"
+
+  if [[ "${code}" -eq 200 ]]; then
+    PASS "Site provides security.txt"
+
+    # TODO(ww): Maybe test the contents of security.txt.
+  elif [[ "${code}" -eq 404 ]]; then
+    MEH TWA-0504
+  else
+    UNK "Got a weird response code (${code}) when testing for security.txt at: ${url}"
   fi
 }
 
@@ -800,7 +815,7 @@ stage_1_redirection
 stage_2_security_headers
 stage_3_server_information_disclosure
 stage_4_repo_and_env_disclosure
-stage_5_robots_check
+stage_5_robots_and_security_check
 stage_6_caa
 stage_7_open_development_ports
 stage_8_cookie_checks
