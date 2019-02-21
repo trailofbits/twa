@@ -92,7 +92,7 @@ by editing it.
 To run it from a Docker container:
 
 ```bash
-$ docker run -t trailofbits/twa -vw google.com
+$ docker run --rm -t trailofbits/twa -vw google.com
 ```
 
 or, to build it manually:
@@ -100,8 +100,8 @@ or, to build it manually:
 ```bash
 $ git clone https://github.com/trailofbits/twa.git
 $ cd twa
-$ docker build -t twa .
-$ docker run -it twa:latest -vw google.com
+$ docker build -t trailofbits/twa .
+$ docker run --rm -t trailofbits/twa -vw google.com
 ```
 
 
