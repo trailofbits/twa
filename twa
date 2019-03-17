@@ -727,6 +727,7 @@ function stage_7_open_development_ports {
     8081 # common http development port
     8443 # common https development port
     8888 # common http development port
+    9292 # rack default port
   )
 
   for dev_port in "${dev_ports[@]}"; do
