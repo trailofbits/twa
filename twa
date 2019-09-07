@@ -537,7 +537,21 @@ function stage_4_repo_and_env_disclosure {
     fi
   done
 
-  for pm_file in .npmrc Gemfile Gemfile.lock Rakefile setup.py requirements.txt; do
+  pm_files=(
+    .npmrc
+    package.json
+    package-lock.json
+    .gem/credentials
+    Gemfile
+    Gemfile.lock
+    Rakefile
+    .pypirc
+    setup.py
+    requirements.txt
+    Cargo.lock
+    Cargo.toml
+  )
+  for pm_file in "${pm_files[@]}"; do
     url="http://${domain}/${pm_file}"
 
     read -r -a resp < <(fetch_respcode "${url}")
@@ -555,7 +569,7 @@ function stage_4_repo_and_env_disclosure {
     fi
   done
 
-  for build_file in Makefile CMakeLists.txt; do
+  for build_file in Dockerfile docker-compose.yml Makefile CMakeLists.txt; do
     url="http://${domain}/${build_file}"
 
     read -r -a resp < <(fetch_respcode "${url}")
