@@ -78,7 +78,7 @@ declare -A TWA_CODES=(
   [TWA-0802]="cookie '\${cookie_name}' has no 'secure' flag"
   [TWA-0803]="cookie '\${cookie_name}' has SameSite set to 'lax'"
   [TWA-0804]="cookie '\${cookie_name}' has SameSite set to 'none' or is not set properly"
-  [TWA-0805]="cookie '\${cookie_name}' is missing or has empty 'SameSite' flag"
+  [TWA-0805]="cookie '\${cookie_name}' has missing or empty 'SameSite' flag"
 )
 
 # If we're being sourced, stop execution here.
