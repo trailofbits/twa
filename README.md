@@ -4,7 +4,6 @@ twa
 [![Build Status](https://travis-ci.org/trailofbits/twa.svg?branch=master)](https://travis-ci.org/trailofbits/twa)
 ![Docker Build Status](https://img.shields.io/docker/build/trailofbits/twa.svg)
 
-
 A **t**iny **w**eb **a**uditor with strong opinions.
 
 ## Usage
@@ -103,7 +102,6 @@ $ cd twa
 $ docker build -t trailofbits/twa .
 $ docker run --rm -t trailofbits/twa -vw google.com
 ```
-
 
 ## Contributing
 
