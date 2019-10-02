@@ -786,17 +786,17 @@ function stage_8_cookie_checks {
       fi
 
       if [[ -n "${has_samesite}" ]]; then
-          samesite_value=$(echo "${has_samesite}" | awk -F= '{ print tolower($2) }')
+        samesite_value=$(echo "${has_samesite}" | awk -F= '{ print tolower($2) }')
 
-          if [[ "${samesite_value}" == "strict" ]]; then
-              PASS "cookie '${cookie_name}' has 'strict' SameSite flag set"
-          elif [[ "${samesite_value}" == "lax" ]]; then
-              MEH TWA-0803
-          else
-              FAIL TWA-0804
-          fi
+        if [[ "${samesite_value}" == "strict" ]]; then
+          PASS "cookie '${cookie_name}' has 'strict' SameSite flag set"
+        elif [[ "${samesite_value}" == "lax" ]]; then
+          MEH TWA-0803
+        else
+          FAIL TWA-0804
+        fi
       else
-          MEH TWA-0805
+        MEH TWA-0805
       fi 
 
     done
