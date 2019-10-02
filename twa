@@ -78,7 +78,7 @@ declare -A TWA_CODES=(
   [TWA-0802]="cookie '\${cookie_name}' has no 'secure' flag"
   [TWA-0803]="cookie '\${cookie_name}' has SameSite set to 'lax'"
   [TWA-0804]="cookie '\${cookie_name}' has SameSite set to 'none' or is not set properly"
-  [TWA-0805]="cookie '\${cookie_name}' does not have 'SameSite' flag set or it's absent"
+  [TWA-0805]="cookie '\${cookie_name}' is missing or has empty 'SameSite' flag"
 )
 
 # If we're being sourced, stop execution here.
@@ -776,7 +776,6 @@ function stage_8_cookie_checks {
       has_secure=$(get_field "secure" <<< "${cookie}")
       has_httponly=$(get_field "HttpOnly" <<< "${cookie}")
       has_samesite=$(get_field "SameSite" <<< "${cookie}")
-      samesite_value=$(echo "${has_samesite}" | awk -F= '{ print tolower($2) }')
 
       if [[ -n "${has_secure}" && -n "${has_httponly}" ]]; then
         PASS "cookie '${cookie_name}' has both 'secure' and 'httponly' flags"
@@ -787,6 +786,8 @@ function stage_8_cookie_checks {
       fi
 
       if [[ -n "${has_samesite}" ]]; then
+          samesite_value=$(echo "${has_samesite}" | awk -F= '{ print tolower($2) }')
+
           if [[ "${samesite_value}" == "strict" ]]; then
               PASS "cookie '${cookie_name}' has 'strict' SameSite flag set"
           elif [[ "${samesite_value}" == "lax" ]]; then
