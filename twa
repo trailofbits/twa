@@ -791,7 +791,7 @@ function stage_8_cookie_checks {
       fi
 
       if [[ -n "${has_samesite}" ]]; then
-        samesite_value=$(echo "${has_samesite}" | awk -F= '{ print tolower($2) }')
+        samesite_value=$(awk -F= '{ print tolower($2) }' <<< "${has_samesite}")
 
         if [[ "${samesite_value}" == "strict" ]]; then
           PASS "cookie '${cookie_name}' has 'strict' SameSite flag set"
@@ -821,7 +821,7 @@ function stage_8_cookie_checks {
       if [[ -n ${has_secure_prefix} ]]; then
         if [[ -n ${has_secure} ]]; then
           if [[ -n ${has_domain} ]]; then
-            domain_value="$(echo "${has_domain}" | awk -F= '{ print tolower($2) }')"
+            domain_value=$(awk -F= '{ print tolower($2) }' <<< "${has_domain}")
             if [[ "${domain_value}" == "${domain}" ]]; then
               PASS "cookie '${cookie_name}' passes all '__Secure' prefix checks"
             else
@@ -850,7 +850,7 @@ function stage_8_cookie_checks {
           if [[ -z ${has_domain} ]]; then
             has_path=$(get_field "path" <<< "${cookie}")
             if [[ -n ${has_path} ]]; then
-              has_correct_path_value="$(echo "${has_path}" | awk -F= '{ print tolower($2) }')"
+              has_correct_path_value=$(awk -F= '{ print tolower($2) }' <<< "${has_path}")
               if [[ -n ${has_correct_path_value} ]]; then
                 PASS "cookie '${cookie_name}' passes all '__Host' prefix checks"
               else
@@ -872,7 +872,7 @@ function stage_8_cookie_checks {
   fi
 }
 
-# Some ideas for a eighth stage:
+# Some ideas for a ninth stage:
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
 # * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
 
