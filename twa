@@ -79,6 +79,11 @@ declare -A TWA_CODES=(
   [TWA-0803]="cookie '\${cookie_name}' has SameSite set to 'lax'"
   [TWA-0804]="cookie '\${cookie_name}' has SameSite set to 'none' or is not set properly"
   [TWA-0805]="cookie '\${cookie_name}' has missing or empty 'SameSite' flag"
+  [TWA-0806]="cookie '\${cookie_name}' must contain a 'Domain' attribute"
+  [TWA-0807]="cookie '\${cookie_name}' must not contain a 'Domain' attribute"
+  [TWA-0808]="cookie '\${cookie_name}' must contain a 'Path' attribute"
+  [TWA-0809]="cookie '\${cookie_name}' 'Domain' attribute must match the domain being tested"
+  [TWA-0810]="cookie '\${cookie_name}' 'Path' attribute must contain a value of '/'"
 )
 
 # If we're being sourced, stop execution here.
@@ -786,7 +791,7 @@ function stage_8_cookie_checks {
       fi
 
       if [[ -n "${has_samesite}" ]]; then
-        samesite_value=$(echo "${has_samesite}" | awk -F= '{ print tolower($2) }')
+        samesite_value=$(awk -F= '{ print tolower($2) }' <<< "${has_samesite}")
 
         if [[ "${samesite_value}" == "strict" ]]; then
           PASS "cookie '${cookie_name}' has 'strict' SameSite flag set"
@@ -797,14 +802,77 @@ function stage_8_cookie_checks {
         fi
       else
         MEH TWA-0805
-      fi 
+      fi
+
+
+      # Cookie prefix checks
+
+      # __Secure requirements:
+      #
+      # Must have "Secure" attribute
+      # Must come from URI that is considered "secure"
+      # Must have "Domain" attribute and it's value must equal the domain being tested
+      has_secure_prefix=$(get_field "__secure" <<< "${cookie}")
+
+      # Used in both checks.
+      has_domain=$(get_field "domain" <<< "${cookie}")
+
+      # Test is skipped if "has_secure_prefix" isn't found.
+      if [[ -n ${has_secure_prefix} ]]; then
+        if [[ -n ${has_secure} ]]; then
+          if [[ -n ${has_domain} ]]; then
+            domain_value=$(awk -F= '{ print tolower($2) }' <<< "${has_domain}")
+            if [[ "${domain_value}" == "${domain}" ]]; then
+              PASS "cookie '${cookie_name}' passes all '__Secure' prefix checks"
+            else
+              FAIL TWA-0809
+            fi
+          else
+            FAIL TWA-0806
+          fi
+        else
+          FAIL TWA-0802
+        fi
+      fi
+
+
+      # __Host requirements:
+      #
+      # Must have "Secure" attribute
+      # Must come from URI that is "secure"
+      # Must NOT contain a "Domain" attribute
+      # Must contain a "Path" attribute with a value of "/"
+      has_host_prefix=$(get_field "__host" <<< "${cookie}")
+
+      # Test is skipped if "has_host_prefix" isn't found.
+      if [[ -n ${has_host_prefix} ]]; then
+        if [[ -n ${has_secure} ]]; then
+          if [[ -z ${has_domain} ]]; then
+            has_path=$(get_field "path" <<< "${cookie}")
+            if [[ -n ${has_path} ]]; then
+              has_correct_path_value=$(awk -F= '{ print tolower($2) }' <<< "${has_path}")
+              if [[ -n ${has_correct_path_value} ]]; then
+                PASS "cookie '${cookie_name}' passes all '__Host' prefix checks"
+              else
+                FAIL TWA-0810
+              fi
+            else
+              FAIL TWA-0808
+            fi
+          else
+            FAIL TWA-0807
+          fi
+        else
+          FAIL TWA-0802
+        fi
+      fi
 
     done
 
   fi
 }
 
-# Some ideas for a eighth stage:
+# Some ideas for a ninth stage:
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
 # * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
 
