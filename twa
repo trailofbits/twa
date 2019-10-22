@@ -802,7 +802,7 @@ function stage_8_cookie_checks {
         fi
       else
         MEH TWA-0805
-      fi 
+      fi
 
 
       # Cookie prefix checks
@@ -819,20 +819,20 @@ function stage_8_cookie_checks {
 
       # Test is skipped if "has_secure_prefix" isn't found.
       if [[ -n ${has_secure_prefix} ]]; then
-          if [[ -n ${has_secure} ]]; then
-              if [[ -n ${has_domain} ]]; then
-                  domain_value="$(echo "${has_domain}" | awk -F= '{ print tolower($2) }')"
-                  if [[ "${domain_value}" == "${domain}" ]]; then
-                      PASS "cookie '${cookie_name}' passes all '__Secure' prefix checks"
-                  else
-                      FAIL TWA-0809
-                  fi
-              else
-                  FAIL TWA-0806
-              fi
+        if [[ -n ${has_secure} ]]; then
+          if [[ -n ${has_domain} ]]; then
+            domain_value="$(echo "${has_domain}" | awk -F= '{ print tolower($2) }')"
+            if [[ "${domain_value}" == "${domain}" ]]; then
+              PASS "cookie '${cookie_name}' passes all '__Secure' prefix checks"
+            else
+              FAIL TWA-0809
+            fi
           else
-              FAIL TWA-0802
+            FAIL TWA-0806
           fi
+        else
+          FAIL TWA-0802
+        fi
       fi
 
 
@@ -846,25 +846,25 @@ function stage_8_cookie_checks {
 
       # Test is skipped if "has_host_prefix" isn't found.
       if [[ -n ${has_host_prefix} ]]; then
-          if [[ -n ${has_secure} ]]; then
-              if [[ -z ${has_domain} ]]; then
-                  has_path=$(get_field "path" <<< "${cookie}")
-                  if [[ -n ${has_path} ]]; then
-                      has_correct_path_value="$(echo "${has_path}" | awk -F= '{ print tolower($2) }')"
-                      if [[ -n ${has_correct_path_value} ]]; then
-                          PASS "cookie '${cookie_name}' passes all '__Host' prefix checks"
-                      else
-                          FAIL TWA-0810
-                      fi
-                  else
-                      FAIL TWA-0808
-                  fi
+        if [[ -n ${has_secure} ]]; then
+          if [[ -z ${has_domain} ]]; then
+            has_path=$(get_field "path" <<< "${cookie}")
+            if [[ -n ${has_path} ]]; then
+              has_correct_path_value="$(echo "${has_path}" | awk -F= '{ print tolower($2) }')"
+              if [[ -n ${has_correct_path_value} ]]; then
+                PASS "cookie '${cookie_name}' passes all '__Host' prefix checks"
               else
-                  FAIL TWA-0807
+                FAIL TWA-0810
               fi
+            else
+              FAIL TWA-0808
+            fi
           else
-              FAIL TWA-0802
+            FAIL TWA-0807
           fi
+        else
+          FAIL TWA-0802
+        fi
       fi
 
     done
