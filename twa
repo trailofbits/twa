@@ -40,6 +40,9 @@ declare -A TWA_CODES=(
   [TWA-0218]="Content-Security-Policy has one or more 'unsafe-eval' policies"
   [TWA-0219]="Content-Security-Policy missing"
   [TWA-0220]="Feature-Policy missing"
+  [TWA-0221]="Expect-CT missing 'enforce' directive"
+  [TWA-0222]="Expect-CT missing 'report-uri' directive"
+  [TWA-0223]="Expect-CT requires missing 'max-age' directive"
 
   # Stage 3
   [TWA-0301]="Site sends 'Server' with what looks like a version tag: \${server}"
@@ -441,7 +444,48 @@ function stage_2_security_headers {
   else
     FAIL TWA-0220
   fi
+
+
+  # Expect-CT Header checks
+
+  # Requirements:
+  #
+  # Must have "max-age" attribute set
+  #
+  # "enforce" attribute is optional but recommended to enforce 
+  # compliance to the CT Policy
+  #
+  # "report-uri" attribute is optional but it's required to have
+  # a directive value. This value doesn't need to be the same
+  # domain or web origin as the host being reported.
+  expect_ct=$(get_header "Expect-CT" <<< "${headers}")
+
+  # "Expect-CT" test is skipped if header isn't found.
+  if [[ -n "${expect_ct}" ]]; then
+
+    # If max_age check fails, don't bother checking anything else.
+    if [[ "${expect_ct}" =~ max-age ]]; then
+      PASS "'max-age' directive is defined for Expect-CT"
+
+      if [[ "${expect_ct}" =~ enforce ]]; then
+        PASS "'enforce' directive is defined for Expect-CT"
+      else
+        MEH TWA-0221
+      fi
+
+      if [[ "${expect_ct}" =~ report-uri ]]; then
+        PASS "'report-uri' directive is defined for Expect-CT"
+      else
+        MEH TWA-0222
+      fi
+
+    else
+      FAIL TWA-0223
+    fi
+
+  fi
 }
+
 
 
 # Stage 3: The server should disclose a minimum amount of information about itself.
