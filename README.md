@@ -13,6 +13,16 @@ A **t**iny **w**eb **a**uditor with strong opinions.
 
 You'll need `bash` 4, `curl`, `dig`, and `nc`, along with a fairly POSIX system.
 
+#### Optional Dependencies
+`testssl.sh` ([github repo](https://github.com/drwetter/testssl.sh))
+#### How to use
+1. Follow install instructions at the `testssl.sh` ([github repo](https://github.com/drwetter/testssl.sh)).
+2. Add the location of `testssl.sh` to your `PATH` environment variable.
+3. Use the `-s` flag to enable `testssl.sh` in twa.
+
+Example: `twa -s google.com`
+
+
 ### Auditing
 
 ```bash
@@ -42,6 +52,9 @@ $ twa -v google.com
 
 # Audit a site and its www subdomain.
 $ twa -w google.com
+
+# Audit a site and include testssl.sh
+$ twa -s google.com
 ```
 
 `twa` takes one domain at a time, and only audits more than one domain at once in the `-w` case.

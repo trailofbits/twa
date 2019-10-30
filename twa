@@ -916,7 +916,31 @@ function stage_8_cookie_checks {
   fi
 }
 
-# Some ideas for a ninth stage:
+# Stage 9(optional): Run 'testssl.sh'
+#
+# This test is completely optional and will be skipped if 'testssl.sh'
+# is not found in your PATH environment variable. By default, 'testssl.sh'
+# will not run unless the '-s' flag is presented.
+#
+# Runs 'testssl.sh' which checks a server's service on any port
+# for the support of TLS/SSL ciphers, protocols as well as some
+# cryptographic flaws.
+#
+# Additional information about 'testssl.sh' can be
+# located at: https://github.com/drwetter/testssl.sh
+#
+function stage_9_testssl {
+  # Skip the test if the '-s' flag is missing
+  if [[ -n "${testssl}" ]]; then
+    if installed testssl.sh; then
+      (exec testssl.sh "${domain}")
+    else
+      UNK "'testssl.sh' not found or may not be installed. Check your PATH environment variable."
+    fi
+  fi
+}
+
+# Some ideas for a tenth stage:
 # * Fetch the server's cert using `openssl s_client`, check it for known bad suites
 # * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
 
@@ -926,13 +950,14 @@ ensure installed dig
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
-while getopts ":wvcV" opt; do
+while getopts ":wvcsV" opt; do
   case "${opt}" in
     w ) www=1 ;;
     v ) verbose=1 ;;
     c ) csv=1 ;;
+    s ) testssl=1 ;;
     V ) echo "twa version ${TWA_VERSION}" ; exit ;;
-    \? ) echo "Usage: twa [-cvw] <domain>"; exit ;;
+    \? ) echo "Usage: twa [-csvw] <domain>"; exit ;;
   esac
 done
 
@@ -965,3 +990,4 @@ stage_5_robots_and_security_check
 stage_6_caa
 stage_7_open_development_ports
 stage_8_cookie_checks
+stage_9_testssl
