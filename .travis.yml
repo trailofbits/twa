@@ -1,6 +1,7 @@
+dist: bionic
 language: bash
 before_install:
-  - sudo apt-get install -y shellcheck
+  - sudo apt-get install -y shellcheck jq testssl.sh
 script:
   - ./util/test
 after_success:
