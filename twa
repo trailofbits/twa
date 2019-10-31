@@ -87,6 +87,9 @@ declare -A TWA_CODES=(
   [TWA-0808]="cookie '\${cookie_name}' must contain a 'Path' attribute"
   [TWA-0809]="cookie '\${cookie_name}' 'Domain' attribute must match the domain being tested"
   [TWA-0810]="cookie '\${cookie_name}' 'Path' attribute must contain a value of '/'"
+
+  # Stage 9
+  [TWA-0901]="testssl reports '\${finding}' ('\${id}')"
 )
 
 # If we're being sourced, stop execution here.
@@ -916,7 +919,7 @@ function stage_8_cookie_checks {
   fi
 }
 
-# Stage 9(optional): Run 'testssl.sh'
+# Stage 9 (optional): Run 'testssl.sh'
 #
 # This test is completely optional and will be skipped if 'testssl.sh'
 # is not found in your PATH environment variable. By default, 'testssl.sh'
@@ -930,28 +933,62 @@ function stage_8_cookie_checks {
 # located at: https://github.com/drwetter/testssl.sh
 #
 function stage_9_testssl {
+  verbose "Stage 9: SSL checks"
+
+  declare -A severity_map=(
+    [OK]=PASS
+    [LOW]=MEH
+    [MEDIUM]=FAIL
+    [HIGH]=FAIL
+    [CRITICAL]=FATAL
+  )
+
   # Skip the test if the '-s' flag is missing
-  if [[ -n "${testssl}" ]]; then
-    if installed testssl; then
-      testssl=testssl
-    elif installed testssl.sh; then
-      testssl=testssl.sh
-    else
-      UNK "'testssl' not found or may not be installed. Check your PATH environment variable."
-      return
-    fi
-
-    (exec "${testssl}" "${domain}")
+  if [[ -z "${testssl}" ]]; then
+    return
   fi
-}
 
-# Some ideas for a tenth stage:
-# * Fetch the server's cert using `openssl s_client`, check it for known bad suites
-# * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
+  if installed testssl; then
+    testssl=testssl
+  elif installed testssl.sh; then
+    testssl=testssl.sh
+  else
+    UNK "'testssl' not found or may not be installed. Check your PATH environment variable."
+    return
+  fi
+
+  verbose "testssl is running, be patient"
+
+  testssl_json=$(mktemp -t -u twa-testssl-XXXXX)
+  trap 'rm -f ${testssl_json}' EXIT
+  "${testssl}" --jsonfile "${testssl_json}" "${domain}" > /dev/null
+
+  while read -r record; do
+    IFS=$'\x01' read -ra record <<< "${record}"
+    severity="${record[0]}"
+    id="${record[1]}"
+    finding="${record[2]}"
+
+    if [[ "${severity}" == "INFO" ]]; then
+      verbose "testssl: '${finding}' (${id})"
+    elif [[ "${severity}" == "OK" ]]; then
+      PASS "testssl: '${finding}'"
+    else
+      severity="${severity_map[${severity}]}"
+
+      if [[ -z "${severity}" ]]; then
+        UNK "testssl: '${finding}'"
+      else
+        "${severity}" TWA-0901
+      fi
+    fi
+  done < <(jq -r $'.[] | [.severity, .id, .finding] | join("\x01")' < "${testssl_json}")
+}
 
 ensure installed curl
 ensure installed nc
 ensure installed dig
+ensure installed jq
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
@@ -996,3 +1033,7 @@ stage_6_caa
 stage_7_open_development_ports
 stage_8_cookie_checks
 stage_9_testssl
+
+# TODO(ww): Something in stage 9 is causing twa to exit with 1, despite appearing
+# to succeed otherwise. Find it and destroy it.
+exit 0
