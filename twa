@@ -452,7 +452,7 @@ function stage_2_security_headers {
   #
   # Must have "max-age" attribute set
   #
-  # "enforce" attribute is optional but recommended to enforce 
+  # "enforce" attribute is optional but recommended to enforce
   # compliance to the CT Policy
   #
   # "report-uri" attribute is optional but it's required to have
@@ -932,11 +932,16 @@ function stage_8_cookie_checks {
 function stage_9_testssl {
   # Skip the test if the '-s' flag is missing
   if [[ -n "${testssl}" ]]; then
-    if installed testssl.sh; then
-      (exec testssl.sh "${domain}")
+    if installed testssl; then
+      testssl=testssl
+    elif installed testssl.sh; then
+      testssl=testssl.sh
     else
-      UNK "'testssl.sh' not found or may not be installed. Check your PATH environment variable."
+      UNK "'testssl' not found or may not be installed. Check your PATH environment variable."
+      return
     fi
+
+    (exec "${testssl}" "${domain}")
   fi
 }
 
