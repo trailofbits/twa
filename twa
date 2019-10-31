@@ -87,6 +87,9 @@ declare -A TWA_CODES=(
   [TWA-0808]="cookie '\${cookie_name}' must contain a 'Path' attribute"
   [TWA-0809]="cookie '\${cookie_name}' 'Domain' attribute must match the domain being tested"
   [TWA-0810]="cookie '\${cookie_name}' 'Path' attribute must contain a value of '/'"
+
+  # Stage 9
+  [TWA-0901]="testssl reports '\${finding}' ('\${id}')"
 )
 
 # If we're being sourced, stop execution here.
@@ -452,7 +455,7 @@ function stage_2_security_headers {
   #
   # Must have "max-age" attribute set
   #
-  # "enforce" attribute is optional but recommended to enforce 
+  # "enforce" attribute is optional but recommended to enforce
   # compliance to the CT Policy
   #
   # "report-uri" attribute is optional but it's required to have
@@ -916,23 +919,87 @@ function stage_8_cookie_checks {
   fi
 }
 
-# Some ideas for a ninth stage:
-# * Fetch the server's cert using `openssl s_client`, check it for known bad suites
-# * Alternatively, just `nmap --script ssl-enum-ciphers -p 443 $domain`
+# Stage 9 (optional): Run 'testssl.sh'
+#
+# This test is completely optional and will be skipped if 'testssl.sh'
+# is not found in your PATH environment variable. By default, 'testssl.sh'
+# will not run unless the '-s' flag is presented.
+#
+# Runs 'testssl.sh' which checks a server's service on any port
+# for the support of TLS/SSL ciphers, protocols as well as some
+# cryptographic flaws.
+#
+# Additional information about 'testssl.sh' can be
+# located at: https://github.com/drwetter/testssl.sh
+#
+function stage_9_testssl {
+  verbose "Stage 9: SSL checks"
+
+  declare -A severity_map=(
+    [OK]=PASS
+    [LOW]=MEH
+    [MEDIUM]=FAIL
+    [HIGH]=FAIL
+    [CRITICAL]=FATAL
+  )
+
+  # Skip the test if the '-s' flag is missing
+  if [[ -z "${testssl}" ]]; then
+    return
+  fi
+
+  if installed testssl; then
+    testssl=testssl
+  elif installed testssl.sh; then
+    testssl=testssl.sh
+  else
+    UNK "'testssl' not found or may not be installed. Check your PATH environment variable."
+    return
+  fi
+
+  verbose "testssl is running, be patient"
+
+  testssl_json=$(mktemp -t -u twa-testssl-XXXXX)
+  trap 'rm -f ${testssl_json}' EXIT
+  "${testssl}" --jsonfile "${testssl_json}" "${domain}" > /dev/null
+
+  while read -r record; do
+    IFS=$'\x01' read -ra record <<< "${record}"
+    severity="${record[0]}"
+    id="${record[1]}"
+    finding="${record[2]}"
+
+    if [[ "${severity}" == "INFO" ]]; then
+      verbose "testssl: '${finding}' (${id})"
+    elif [[ "${severity}" == "OK" ]]; then
+      PASS "testssl: '${finding}'"
+    else
+      severity="${severity_map[${severity}]}"
+
+      if [[ -z "${severity}" ]]; then
+        UNK "testssl: '${finding}'"
+      else
+        "${severity}" TWA-0901
+      fi
+    fi
+  done < <(jq -r $'.[] | [.severity, .id, .finding] | join("\x01")' < "${testssl_json}")
+}
 
 ensure installed curl
 ensure installed nc
 ensure installed dig
+ensure installed jq
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
-while getopts ":wvcV" opt; do
+while getopts ":wvcsV" opt; do
   case "${opt}" in
     w ) www=1 ;;
     v ) verbose=1 ;;
     c ) csv=1 ;;
+    s ) testssl=1 ;;
     V ) echo "twa version ${TWA_VERSION}" ; exit ;;
-    \? ) echo "Usage: twa [-cvw] <domain>"; exit ;;
+    \? ) echo "Usage: twa [-csvw] <domain>"; exit ;;
   esac
 done
 
@@ -965,3 +1032,8 @@ stage_5_robots_and_security_check
 stage_6_caa
 stage_7_open_development_ports
 stage_8_cookie_checks
+stage_9_testssl
+
+# TODO(ww): Something in stage 9 is causing twa to exit with 1, despite appearing
+# to succeed otherwise. Find it and destroy it.
+exit 0
