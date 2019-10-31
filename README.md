@@ -11,17 +11,9 @@ A **t**iny **w**eb **a**uditor with strong opinions.
 
 ### Dependencies
 
-You'll need `bash` 4, `curl`, `dig`, and `nc`, along with a fairly POSIX system.
+You'll need `bash` 4, `curl`, `dig`, `jq`, and `nc`, along with a fairly POSIX system.
 
-#### Optional Dependencies
-`testssl.sh` ([github repo](https://github.com/drwetter/testssl.sh))
-#### How to use
-1. Follow install instructions at the `testssl.sh` ([github repo](https://github.com/drwetter/testssl.sh)).
-2. Add the location of `testssl.sh` to your `PATH` environment variable.
-3. Use the `-s` flag to enable `testssl.sh` in twa.
-
-Example: `twa -s google.com`
-
+[`testssl.sh`](https://github.com/drwetter/testssl.sh) is an optional dependency.
 
 ### Auditing
 
@@ -47,14 +39,18 @@ $ twa google.com
 > PASS(google.com): No environment file at: http://google.com/.env
 > PASS(google.com): No environment file at: http://google.com/.dockerenv
 
-# Audit a site, and be verbose.
-$ twa -v google.com
+# Audit a site, and be verbose (on stderr)
+$ twa -v example.com
 
-# Audit a site and its www subdomain.
-$ twa -w google.com
+# Audit a site and emit results in CSV
+$ twa -c example.com
 
-# Audit a site and include testssl.sh
-$ twa -s google.com
+# Audit a site and its www subdomain
+$ twa -w example.com
+
+# Audit a site and include testssl
+# Requires either `testssl` or `testssl.sh` on your $PATH
+$ twa -s example.com
 ```
 
 `twa` takes one domain at a time, and only audits more than one domain at once in the `-w` case.
