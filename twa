@@ -107,6 +107,10 @@ if [[ -t 1 && -z "${NO_COLOR}" ]]; then
   TWA_COLOR_RESET=$(tput sgr0)
 fi
 
+function usage {
+  echo "Usage: twa [-csvw] <domain>"
+}
+
 function installed {
   cmd=$(command -v "${1}")
 
@@ -998,8 +1002,8 @@ while getopts ":wvcsV" opt; do
     v ) verbose=1 ;;
     c ) csv=1 ;;
     s ) testssl=1 ;;
-    V ) echo "twa version ${TWA_VERSION}" ; exit ;;
-    \? ) echo "Usage: twa [-csvw] <domain>"; exit ;;
+    V ) echo "twa version ${TWA_VERSION}"; exit ;;
+    \? ) usage; exit ;;
   esac
 done
 
@@ -1007,7 +1011,7 @@ shift $((OPTIND - 1))
 
 domain="${1}"
 
-[[ -n "${domain}" ]] || { echo "Usage: twa [-w] <domain>"; exit 1;  }
+[[ -n "${domain}" ]] || { usage; exit 1;  }
 [[ "${domain}" =~ ^https?:// ]] && die "Expected a bare domain, e.g. 'example.com'"
 
 if [[ -n "${www}" ]]; then
