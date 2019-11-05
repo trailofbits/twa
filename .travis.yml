@@ -1,7 +1,7 @@
-dist: bionic
+dist: minimal
 language: bash
 before_install:
-  - sudo apt-get install -y shellcheck jq testssl.sh
+  - sudo apt-get install -y shellcheck jq testssl.sh python3
 script:
   - ./util/test
 after_success:
