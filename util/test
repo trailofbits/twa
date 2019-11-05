@@ -98,7 +98,7 @@ import sys
 
 reader = csv.reader(sys.stdin)
 [print(row) for row in reader]
-  '
+'
 
   python3 -c "${csvchecker}" < <("${TWA}" -cs "${TEST_DOMAIN}")
 
