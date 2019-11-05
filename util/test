@@ -91,6 +91,20 @@ function test_twa_testssl {
   echo "${FUNCNAME[0]}: OK"
 }
 
+function test_twa_csv {
+  csvchecker='
+import csv
+import sys
+
+reader = csv.reader(sys.stdin)
+[print(row) for row in reader]
+  '
+
+  python3 -c "${csvchecker}" < <("${TWA}" -cs "${TEST_DOMAIN}")
+
+  echo "${FUNCNAME[0]}: OK"
+}
+
 TWA="${TWA:-./twa}"
 TSCORE="${TSCORE:-./tscore}"
 TEST_DOMAIN="${TEST_DOMAIN:-example.com}"
@@ -104,6 +118,6 @@ ensure installed shellcheck
 test_lint
 test_twa_and_tscore
 test_twa_testssl
-# TODO(ww): Add a test to ensure valid CSV output in CSV mode
+test_twa_csv
 
 exit 0
