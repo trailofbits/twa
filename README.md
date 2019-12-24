@@ -1,7 +1,7 @@
 twa
 ===
 
-[![Build Status](https://travis-ci.org/trailofbits/twa.svg?branch=master)](https://travis-ci.org/trailofbits/twa)
+[![Build Status](https://img.shields.io/github/workflow/status/trailofbits/twa/CI/master)](https://github.com/trailofbits/twa/actions?query=workflow%3ACI)
 ![Docker Build Status](https://img.shields.io/docker/build/trailofbits/twa.svg)
 
 
