@@ -18,6 +18,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: sudo apt install curl dnsutils jq netcat shellcheck jq testssl.sh python3
+      run: |
+        sudo apt update
+        sudo apt install curl dnsutils jq netcat shellcheck jq testssl.sh python3
     - name: Run tests
       run: ./util/test
