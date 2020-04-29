@@ -1,0 +1,26 @@
+name: docs-deploy
+
+on:
+  push:
+    branches:
+      - master
+      - ww/docs-deploy
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: docs
+        run: |
+          mkdir public
+          groff -mandoc -Thtml < twa.1 > public/index.html
+
+      - name: deploy
+        uses: peaceiris/actions-gh-pages@v3.5.6
+        with:
+          personal_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: gh-pages
+          force_orphan: true
