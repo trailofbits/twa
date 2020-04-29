@@ -12,6 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y groff
+
       - name: docs
         run: |
           mkdir public
