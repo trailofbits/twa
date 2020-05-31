@@ -606,7 +606,10 @@ function stage_4_repo_and_env_disclosure {
     Rakefile
     .pypirc
     setup.py
+    setup.cfg
     requirements.txt
+    Pipfile
+    Pipfile.lock
     Cargo.lock
     Cargo.toml
   )
