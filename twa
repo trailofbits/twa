@@ -186,7 +186,7 @@ function output {
   else
     # default is ANSI
     # colorize first arg
-    first="";
+    first=""
     if [ "${1}" == "PASS" ]; then
       first="${TWA_COLOR_GREEN}${1}${TWA_COLOR_RESET}"
     elif [ "${1}" == "MEH" ]; then
@@ -195,9 +195,9 @@ function output {
       first="${TWA_COLOR_RED}${1}${TWA_COLOR_RESET}"
     elif [ "${1}" == "UNK" ] || [ "${1}" == "SKIP" ]; then
       first="${TWA_COLOR_PURPLE}${1}${TWA_COLOR_RESET}"
-    fi;
+    fi
     echo -e "$first(${2}): ${3}"
-  fi;
+  fi
 }
 
 # PASS: A test passed with flying colors (nothing wrong at all).
