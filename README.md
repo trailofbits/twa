@@ -3,6 +3,7 @@ twa
 
 [![Build Status](https://img.shields.io/github/workflow/status/trailofbits/twa/CI/master)](https://github.com/trailofbits/twa/actions?query=workflow%3ACI)
 ![Docker Build Status](https://img.shields.io/docker/build/trailofbits/twa.svg)
+[![Repology - Repositories](https://img.shields.io/repology/repositories/twa)](https://repology.org/project/twa/versions)
 
 
 A **t**iny **w**eb **a**uditor with strong opinions.
