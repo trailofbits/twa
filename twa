@@ -97,7 +97,7 @@ declare -A TWA_CODES=(
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] || return
 
 # TTY check to prevent breaking scripts
-# Respect the "NO_COLOR spec"
+# Respect the "NO_COLOR" spec: https://no-color.org/
 if [[ -t 1 && -z "${NO_COLOR}" ]]; then
   # Colored output
   TWA_COLOR_GREEN=$(tput setaf 2)
