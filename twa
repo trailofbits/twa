@@ -108,7 +108,7 @@ if [[ -t 1 && -z "${NO_COLOR}" ]]; then
 fi
 
 function usage {
-  echo "Usage: twa [-csvw] <domain>"
+  echo "Usage: twa [-wvcsV] <domain>"
 }
 
 function installed {
