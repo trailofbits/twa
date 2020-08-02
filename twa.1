@@ -4,7 +4,7 @@
 twa \- tiny web auditor with strong opinions
 
 .SH SYNOPSIS
-\fBtwa\fR \fI[-wvcsV]\fR \fIDOMAIN\fR
+\fBtwa\fR \fI[-wvcsdV]\fR \fIDOMAIN\fR
 
 .SH DESCRIPTION
 .B twa
@@ -36,6 +36,9 @@ Emit output in CSV.
 .TP
 .B \-s
 Run testssl-based checks (skipped by default)
+.TP
+.B \-d
+Disable scanning common development ports
 .TP
 .B \-V
 Print the version and exit.

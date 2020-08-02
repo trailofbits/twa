@@ -108,7 +108,7 @@ if [[ -t 1 && -z "${NO_COLOR}" ]]; then
 fi
 
 function usage {
-  echo "Usage: twa [-wvcsV] <domain>"
+  echo "Usage: twa [-wvcsdV] <domain>"
 }
 
 function installed {
@@ -806,6 +806,11 @@ function stage_7_open_development_ports {
     9292 # rack default port
   )
 
+  # Skip the portscan if the '-d' flag is set
+  if [[ -n "${disableportscan}" ]]; then
+    return
+  fi
+
   for dev_port in "${dev_ports[@]}"; do
     if probe "${domain}" "${dev_port}"; then
       FAIL TWA-0701
@@ -999,12 +1004,13 @@ ensure installed jq
 
 [[ "${BASH_VERSINFO[0]}" -ge 4 ]] || die "Expected GNU Bash 4.0 or later, got ${BASH_VERSION}"
 
-while getopts ":wvcsV" opt; do
+while getopts ":wvcsdV" opt; do
   case "${opt}" in
     w ) www=1 ;;
     v ) verbose=1 ;;
     c ) csv=1 ;;
     s ) testssl=1 ;;
+    d ) disableportscan=1 ;;
     V ) echo "twa version ${TWA_VERSION}"; exit ;;
     \? ) usage; exit ;;
   esac

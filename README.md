@@ -52,6 +52,9 @@ $ twa -w example.com
 # Audit a site and include testssl
 # Requires either `testssl` or `testssl.sh` on your $PATH
 $ twa -s example.com
+
+# Audit a site without scanning common development ports
+$ twa -d example.com
 ```
 
 `twa` takes one domain at a time, and only audits more than one domain at once in the `-w` case.
