@@ -812,12 +812,17 @@ function stage_7_open_development_ports {
   fi
 
   for dev_port in "${dev_ports[@]}"; do
+    # Start probe in a parallel process because, on closed ports the time out takes some seconds.
     if probe "${domain}" "${dev_port}"; then
       FAIL TWA-0701
     else
       PASS "Domain is not listening on a development/backend port: ${dev_port}"
-    fi
+    fi &
+    # Limit the script to 2 port scans per second by 1/2 second wait.
+    sleep 0.5
   done
+  # Wait until all port scans are completed.
+  wait
 }
 
 # Stage 8: Cookie checks.
