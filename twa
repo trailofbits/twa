@@ -876,7 +876,7 @@ function stage_8_cookie_checks {
       # Must have "Secure" attribute
       # Must come from URI that is considered "secure"
       # Must have "Domain" attribute and it's value must equal the domain being tested
-      has_secure_prefix=$(get_field "__secure" <<< "${cookie}")
+      has_secure_prefix=$(get_field "__secure-" <<< "${cookie}")
 
       # Used in both checks.
       has_domain=$(get_field "domain" <<< "${cookie}")
@@ -906,7 +906,7 @@ function stage_8_cookie_checks {
       # Must come from URI that is "secure"
       # Must NOT contain a "Domain" attribute
       # Must contain a "Path" attribute with a value of "/"
-      has_host_prefix=$(get_field "__host" <<< "${cookie}")
+      has_host_prefix=$(get_field "__host-" <<< "${cookie}")
 
       # Test is skipped if "has_host_prefix" isn't found.
       if [[ -n ${has_host_prefix} ]]; then
