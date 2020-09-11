@@ -1023,7 +1023,9 @@ done
 
 shift $((OPTIND - 1))
 
-domain="${1}"
+# RFC4343: Domain Name System (DNS) Case Insensitivity Clarification
+# In the twa script all case insensitive compares are done by convert to lowercase.
+domain="${1,,}"
 
 [[ -n "${domain}" ]] || { usage; exit 1;  }
 [[ "${domain}" =~ ^https?:// ]] && die "Expected a bare domain, e.g. 'example.com'"
