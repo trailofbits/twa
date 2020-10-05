@@ -43,6 +43,11 @@ declare -A TWA_CODES=(
   [TWA-0221]="Expect-CT missing 'enforce' directive"
   [TWA-0222]="Expect-CT missing 'report-uri' directive"
   [TWA-0223]="Expect-CT requires missing 'max-age' directive"
+  [TWA-0224]="'Access-Control-Allow-Origin' field '*' allows resources to be accessable by any domain."
+  [TWA-0225]="'Access-Control-Allow-Origin' field 'null' allows the 'Origin' header to be crafted to grant access to resources on this domain."
+  [TWA-0226]="'Access-Control-Allow-Origin' header is not configured properly."
+  [TWA-0227]="'Access-Control-Allow-Credentials' value is set to 'false'."
+  [TWA-0228]="'Access-Control-Allow-Credentials' header is not configured properly."
 
   # Stage 3
   [TWA-0301]="Site sends 'Server' with what looks like a version tag: \${server}"
@@ -490,6 +495,69 @@ function stage_2_security_headers {
       FAIL TWA-0223
     fi
 
+  fi
+
+  # 'Access-Control-Allow-Origin' Header checks.
+
+  # Requirements:
+  #
+  # This test only happens if the header exists or else
+  # it will be skipped entirely.
+  #
+  # Source: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
+  #
+  ac_allow_origin=$(get_header "Access-Control-Allow-Origin" <<< "${headers}")
+
+  # Only perform this check if the header exists.
+  if [[ -n "${ac_allow_origin}" ]]; then
+      allow_origin_field=$(get_field <<< "${ac_allow_origin}")
+
+      case "${allow_origin_field}" in
+          "https://${domain}")
+              PASS "'Access-Control-Allow-Origin' is properly configured for this domain."
+              ;;
+          "*")
+              # This resource can be accessed by any domain
+              FAIL TWA-0224
+              ;;
+          "null")
+              # The 'Origin' header can be crafted to grant access to the resource and is not recommended to use.
+              FAIL TWA-0225
+              ;;
+          *)
+              # This header is not configured properly.
+              FAIL TWA-0226
+              ;;
+      esac
+  fi
+
+  # 'Access-Control-Allow-Credentials' Header checks.
+
+  # Requirements:
+  #
+  # This test only happens if the header exists or else
+  # it will be skipped entirely.
+  #
+  # Source: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
+  #
+  ac_allow_credentials=$(get_header "Access-Control-Allow-Credentials" <<< "${headers}")
+
+  if [[ -n "${ac_allow_credentials}" ]]; then
+      allow_credentials_field=$(get_field <<< "${ac_allow_credentials}")
+
+      case "${allow_credentials_field}" in
+          "true")
+              PASS "'Access-Control-Allow-Credentials' is properly configured for this domain."
+              ;;
+          "false")
+              # It's better to remove this header entirely instead of setting the value to false.
+              FAIL TWA-0227
+              ;;
+          *)
+              # This header is not configured properly
+              FAIL TWA-0228
+              ;;
+      esac
   fi
 }
 
