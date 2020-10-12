@@ -48,6 +48,8 @@ declare -A TWA_CODES=(
   [TWA-0226]="'Access-Control-Allow-Origin' header is not configured properly."
   [TWA-0227]="'Access-Control-Allow-Credentials' value is set to 'false'."
   [TWA-0228]="'Access-Control-Allow-Credentials' header is not configured properly."
+  [TWA-0229]="'Cross-Origin-Embedder-Policy' allows cross-origin resources to be fetched without giving explicit permission."
+  [TWA-0230]="'Cross-Origin-Opener-Policy' allows the document to be added to its opener's browsing context group."
 
   # Stage 3
   [TWA-0301]="Site sends 'Server' with what looks like a version tag: \${server}"
@@ -559,9 +561,70 @@ function stage_2_security_headers {
               ;;
       esac
   fi
+
+
+  # 'Cross-Origin-Embedder-Policy' Header checks.
+
+  # Requirements:
+  #
+  # This test only happens if the header exists or else
+  # it will be skipped entirely.
+  #
+  # Source: https://html.spec.whatwg.org/multipage/origin.html#coep
+  # Source: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy
+  #
+  coep=$(get_header "Cross-Origin-Embedder-Policy" <<< "${headers}")
+
+  if [[ -n "${coep}" ]]; then
+    coep_field=$(get_field <<< "${coep}")
+
+    case "${coep_field}" in
+      "require-corp")
+        PASS "'Cross-Origin-Embedder-Policy' Fetching cross-origin resources requires the server's explicit permission through the CORS protocol or the 'Cross-Origin-Resource-Policy' header."
+        ;;
+      "unsafe-none")
+        # cross-origin resources can be fetched without giving explicit permission through the CORS protocol or the `Cross-Origin-Resource-Policy` header.
+        MEH TWA-0229
+        ;;
+      *)
+        UNK "Unknown header field value for 'Cross-Origin-Embedder-Policy': ${coep_field}"
+        ;;
+    esac
+  fi
+
+
+  # 'Cross-Origin-Opener-Policy' Header checks.
+
+  # Requirements:
+  #
+  # This test only happens if the header exists or else
+  # it will be skipped entirely.
+  #
+  # Source: https://html.spec.whatwg.org/multipage/origin.html#cross-origin-opener-policies
+  # Source: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy
+  #
+  coop=$(get_header "Cross-Origin-Opener-Policy" <<< "${headers}")
+
+  if [[ -n "${coop}" ]]; then
+    coop_field=$(get_field <<< "${coop}")
+
+    case "${coop_field}" in
+      "same-origin")
+        PASS "'Cross-Origin-Opener-Policy' Isolates the browsing context exclusively to same-origin documents."
+        ;;
+      "same-origin-allow-popups")
+        PASS "'Cross-Origin-Opener-Policy' Retains references to newly opened windows or tabs."
+        ;;
+      "unsafe-none")
+        # Allows the document to be added to its opener's browsing context group.
+        MEH TWA-0230
+        ;;
+      *)
+        UNK "Unknown header field value for 'Cross-Origin-Opener-Policy': ${coop_field}"
+        ;;
+    esac
+  fi
 }
-
-
 
 # Stage 3: The server should disclose a minimum amount of information about itself.
 #
