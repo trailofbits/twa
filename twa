@@ -81,7 +81,7 @@ declare -A TWA_CODES=(
   [TWA-0604]="Domain doesn't specify any violation reporting endpoints"
 
   # Stage 7
-  [TWA-0701]="Domain listen on a development/backend port \${dev_port} (\${dev_port_comment})"
+  [TWA-0701]="Domain is listening on a development/backend port \${dev_port} (\${dev_port_comment})"
 
   # Stage 8
   [TWA-0801]="cookie '\${cookie_name}' has 'secure' but no 'httponly' flag"
@@ -252,7 +252,7 @@ function SKIP {
 function stage_0_has_https {
   verbose "Stage 0: Server supports HTTPS"
 
-  # First, just probe the domain to see if it listens on 443.
+  # First, just probe the domain to see if it is listening on 443.
   if ! probe "${domain}" 443 ; then
     FATAL TWA-0001
     no_https=1 ; return
