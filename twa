@@ -81,7 +81,7 @@ declare -A TWA_CODES=(
   [TWA-0604]="Domain doesn't specify any violation reporting endpoints"
 
   # Stage 7
-  [TWA-0701]="Domain is listening on a development/backend port: \${dev_port}"
+  [TWA-0701]="Domain listen on a development/backend port \${dev_port} (\${dev_port_comment})"
 
   # Stage 8
   [TWA-0801]="cookie '\${cookie_name}' has 'secure' but no 'httponly' flag"
@@ -923,29 +923,29 @@ function stage_6_caa {
 # Checks:
 #  * Each port should not respond to a connection request.
 function stage_7_open_development_ports {
-  dev_ports=(
-    1433 # Microsoft SQL Server
-    3000 # node.js (express.js), ruby on rails
-    3050 # Interbase, Firebird
-    3306 # MySQL and MariaDB
-    4443 # common https development port
-    4567 # sinatra
-    5000 # Flask and Kestrel's default port
-    5432 # PostgreSQL
-    6379 # Redis
-    8000 # common http development port
-    8008 # common http development port
-    8080 # common http development port
-    8081 # common http development port
-    8086 # InfluxDB HTTP service
-    8088 # common http development port
-    8093 # Couchbase Query service REST traffic
-    8443 # common https development port
-    8888 # common http development port
-    9200 # Elasticsearch's REST API
-    9292 # rack default port
-    27017 # MongoDB
-    33060 # MySQL X-Protocol
+  declare -A dev_ports=(
+    [1433]='Microsoft SQL Server default port'
+    [3000]='node.js (express.js), ruby on rails'
+    [3050]='Interbase, Firebird default port'
+    [3306]='MySQL and MariaDB default port'
+    [4443]='common https development port'
+    [4567]='sinatra default port'
+    [5000]='Flask and Kestrel default port'
+    [5432]='PostgreSQL default port'
+    [6379]='Redis default port'
+    [8000]='common http development port'
+    [8008]='common http development port'
+    [8080]='common http development port'
+    [8081]='common http development port'
+    [8086]='InfluxDB HTTP service default port'
+    [8088]='common http development port'
+    [8093]='Couchbase Query service REST traffic'
+    [8443]='common https development port'
+    [8888]='common http development port'
+    [9200]='Elasticsearch REST API default port'
+    [9292]='rack default port'
+    [27017]='MongoDB default port'
+    [33060]='MySQL X-Protocol default port'
   )
 
   # Skip the portscan if the '-d' flag is set
@@ -953,12 +953,13 @@ function stage_7_open_development_ports {
     return
   fi
 
-  for dev_port in "${dev_ports[@]}"; do
+  for dev_port in "${!dev_ports[@]}"; do
+    dev_port_comment=${dev_ports[$dev_port]}
     # Start probe in a parallel process because, on closed ports the time out takes some seconds.
     if probe "${domain}" "${dev_port}"; then
       FAIL TWA-0701
     else
-      PASS "Domain is not listening on a development/backend port: ${dev_port}"
+      PASS "Domain is not listening on port ${dev_port} (${dev_port_comment})"
     fi &
     # Limit the script to 2 port scans per second by 1/2 second wait.
     sleep 0.5
