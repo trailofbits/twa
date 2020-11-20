@@ -924,17 +924,28 @@ function stage_6_caa {
 #  * Each port should not respond to a connection request.
 function stage_7_open_development_ports {
   dev_ports=(
+    1433 # Microsoft SQL Server
     3000 # node.js (express.js), ruby on rails
+    3050 # Interbase, Firebird
+    3306 # MySQL and MariaDB
     4443 # common https development port
     4567 # sinatra
+    5000 # Flask and Kestrel's default port
+    5432 # PostgreSQL
+    6379 # Redis
     8000 # common http development port
     8008 # common http development port
     8080 # common http development port
-    8088 # common http development port
     8081 # common http development port
+    8086 # InfluxDB HTTP service
+    8088 # common http development port
+    8093 # Couchbase Query service REST traffic
     8443 # common https development port
     8888 # common http development port
+    9200 # Elasticsearch's REST API
     9292 # rack default port
+    27017 # MongoDB
+    33060 # MySQL X-Protocol
   )
 
   # Skip the portscan if the '-d' flag is set
