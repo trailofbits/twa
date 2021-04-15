@@ -2,7 +2,6 @@ twa
 ===
 
 [![Build Status](https://img.shields.io/github/workflow/status/trailofbits/twa/CI/master)](https://github.com/trailofbits/twa/actions?query=workflow%3ACI)
-![Docker Build Status](https://img.shields.io/docker/build/trailofbits/twa.svg)
 [![Repology - Repositories](https://img.shields.io/repology/repositories/twa)](https://repology.org/project/twa/versions)
 
 
@@ -105,18 +104,9 @@ by editing it.
 To run it from a Docker container:
 
 ```bash
+$ docker build -t trailofbis/twa .
 $ docker run --rm -t trailofbits/twa -vw google.com
 ```
-
-or, to build it manually:
-
-```bash
-$ git clone https://github.com/trailofbits/twa.git
-$ cd twa
-$ docker build -t trailofbits/twa .
-$ docker run --rm -t trailofbits/twa -vw google.com
-```
-
 
 ## Contributing
 
