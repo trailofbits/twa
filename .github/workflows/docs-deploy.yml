@@ -13,13 +13,13 @@ jobs:
 
       - name: deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y groff
+          sudo apt-get update -y
+          sudo apt-get install -y roffit
 
       - name: docs
         run: |
           mkdir public
-          groff -mandoc -Thtml < twa.1 > public/index.html
+          roffit < twa.1 > public/index.html
 
       - name: deploy
         uses: peaceiris/actions-gh-pages@v3.5.6
