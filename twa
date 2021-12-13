@@ -662,7 +662,8 @@ function stage_3_server_information_disclosure {
 }
 
 
-# Stage 4: The server shouldn't be serving SCM repositories or common environment files.
+# Stage 4: The server shouldn't be serving SCM repositories, build tool files,
+# or common environment files.
 #
 # Checks:
 # * GET /.git/HEAD should 404.
@@ -709,7 +710,15 @@ function stage_4_repo_and_env_disclosure {
     fi
   done
 
-  for config_file in config.xml config.json config.yaml config.yml config.ini config.cfg; do
+  config_files=(
+    config.xml
+    config.json
+    config.yaml
+    config.ini
+    config.cfg
+  )
+
+  for config_file in "${config_files[@]}"; do
     url="http://${domain}/${config_file}"
 
     read -r -a resp < <(fetch_respcode "${url}")
@@ -728,22 +737,28 @@ function stage_4_repo_and_env_disclosure {
   done
 
   pm_files=(
+    # Node.js
     .npmrc
     package.json
     package-lock.json
+    # Ruby
     .gem/credentials
     Gemfile
     Gemfile.lock
     Rakefile
+    # Python
     .pypirc
     setup.py
     setup.cfg
     requirements.txt
     Pipfile
     Pipfile.lock
+    pyproject.toml
+    # Rust
     Cargo.lock
     Cargo.toml
   )
+
   for pm_file in "${pm_files[@]}"; do
     url="http://${domain}/${pm_file}"
 
@@ -762,7 +777,25 @@ function stage_4_repo_and_env_disclosure {
     fi
   done
 
-  for build_file in Dockerfile docker-compose.yml Makefile CMakeLists.txt; do
+  build_files=(
+    # Docker
+    Dockerfile
+    docker-compose.yml
+    # Make
+    Makefile
+    GNUMakefile
+    # CMake
+    CMakeLists.txt
+    # Autoconf and related tools
+    configure
+    configure.ac
+    Makefile.am
+    Makefile.in
+    # Other build tools
+    Justfile
+  )
+
+  for build_file in "${build_files[@]}"; do
     url="http://${domain}/${build_file}"
 
     read -r -a resp < <(fetch_respcode "${url}")
