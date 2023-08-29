@@ -1,7 +1,7 @@
 twa
 ===
 
-[![Build Status](https://img.shields.io/github/workflow/status/trailofbits/twa/CI/master)](https://github.com/trailofbits/twa/actions?query=workflow%3ACI)
+[![CI](https://github.com/trailofbits/twa/actions/workflows/ci.yml/badge.svg)](https://github.com/trailofbits/twa/actions/workflows/ci.yml)
 [![Repology - Repositories](https://img.shields.io/repology/repositories/twa)](https://repology.org/project/twa/versions)
 
 
