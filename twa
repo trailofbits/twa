@@ -670,6 +670,7 @@ function stage_3_server_information_disclosure {
 # * GET /.hg/store/00manifest.i should 404.
 # * GET /.svn/entries should 404.
 # * GET /.env should 404.
+# * GET /.envrc should 404.
 # * GET /.dockerenv should 404.
 function stage_4_repo_and_env_disclosure {
   verbose "Stage 4: SCM repo and env file disclosure"
@@ -692,7 +693,7 @@ function stage_4_repo_and_env_disclosure {
     fi
   done
 
-  for env_file in .env .dockerenv; do
+  for env_file in .env .envrc .dockerenv; do
     url="http://${domain}/${env_file}"
 
     read -r -a resp < <(fetch_respcode "${url}")
