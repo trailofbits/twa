@@ -4,7 +4,7 @@
 
 shopt -s nocasematch
 
-TWA_VERSION="1.10.0"
+TWA_VERSION="1.11.0"
 
 TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
 TWA_USER_AGENT="${TWA_USER_AGENT:-Mozilla/5.0}"
