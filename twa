@@ -4,7 +4,7 @@
 
 shopt -s nocasematch
 
-TWA_VERSION="1.11.0"
+TWA_VERSION="1.11.1"
 
 TWA_TIMEOUT="${TWA_TIMEOUT:-5}"
 TWA_USER_AGENT="${TWA_USER_AGENT:-Mozilla/5.0}"
@@ -39,7 +39,7 @@ declare -A TWA_CODES=(
   [TWA-0217]="Content-Security-Policy has one or more 'unsafe-inline' policies"
   [TWA-0218]="Content-Security-Policy has one or more 'unsafe-eval' policies"
   [TWA-0219]="Content-Security-Policy missing"
-  [TWA-0220]="Feature-Policy missing"
+  [TWA-0220]="Permissions-Policy missing"
   [TWA-0221]="Expect-CT missing 'enforce' directive"
   [TWA-0222]="Expect-CT missing 'report-uri' directive"
   [TWA-0223]="Expect-CT requires missing 'max-age' directive"
@@ -50,7 +50,7 @@ declare -A TWA_CODES=(
   [TWA-0228]="'Access-Control-Allow-Credentials' header is not configured properly."
   [TWA-0229]="'Cross-Origin-Embedder-Policy' allows cross-origin resources to be fetched without giving explicit permission."
   [TWA-0230]="'Cross-Origin-Opener-Policy' allows the document to be added to its opener's browsing context group."
-
+  [TWA-0231]="Feature-Policy has been deprecated in favor of Permissions-Policy."
   # Stage 3
   [TWA-0301]="Site sends 'Server' with what looks like a version tag: \${server}"
   [TWA-0302]="Site sends a long 'Server', probably disclosing version info: \${server}"
@@ -454,9 +454,15 @@ function stage_2_security_headers {
   fp=$(get_header "Feature-Policy" <<< "${headers}")
 
   if [[ -n "${fp}" ]]; then
-    SKIP "Feature-Policy checks not implemented yet"
+    MEH TWA-0231
+  fi
+
+  fp=$(get_header "Permissions-Policy" <<< "${headers}")
+
+  if [[ -n "${fp}" ]]; then
+    SKIP "Permissions-Policy checks not implemented yet"
   else
-    FAIL TWA-0220
+    MEH TWA-0220
   fi
 
 
